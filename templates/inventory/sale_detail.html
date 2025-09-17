@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Venta {{ sale.id }} - Detalle{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">Detalle de Venta</h4>
+                <div class="btn-group">
+                    {% if not sale.is_picked_up %}
+                        <form method="post" action="{% url 'mark_pickup' sale.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm" 
+                                    onclick="return confirm('¿Marcar como retirado?')">
+                                <i class="fas fa-check me-1"></i>Marcar Retirado
+                            </button>
+                        </form>
+                    {% endif %}
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i>Imprimir
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información de la Venta</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">ID de Venta:</th>
+                                <td><code>{{ sale.id }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Fecha de Venta:</th>
+                                <td>{{ sale.sale_date|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Vendido por:</th>
+                                <td>{{ sale.sold_by.get_full_name|default:sale.sold_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    {% if sale.is_picked_up %}
+                                        <span class="badge bg-success">Retirado</span>
+                                        {% if sale.pickup_date %}
+                                            <br><small class="text-muted">{{ sale.pickup_date|date:"d/m/Y H:i" }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendiente de retiro</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Información del Cliente</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Nombre:</th>
+                                <td>{{ sale.customer.name }}</td>
+                            </tr>
+                            {% if sale.customer.email %}
+                            <tr>
+                                <th>Email:</th>
+                                <td>{{ sale.customer.email }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if sale.customer.phone %}
+                            <tr>
+                                <th>Teléfono:</th>
+                                <td>{{ sale.customer.phone }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if sale.customer.dni %}
+                            <tr>
+                                <th>DNI:</th>
+                                <td>{{ sale.customer.dni }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Producto Vendido</h6>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>{{ sale.phone.model }}</h5>
+                                <p class="mb-1"><strong>IMEI:</strong> {{ sale.phone.imei }}</p>
+                                <p class="mb-1"><strong>Condición:</strong> {{ sale.phone.get_condition_display }}</p>
+                                {% if sale.phone.color %}<p class="mb-1"><strong>Color:</strong> {{ sale.phone.color }}</p>{% endif %}
+                                {% if sale.phone.storage_capacity %}<p class="mb-0"><strong>Almacenamiento:</strong> {{ sale.phone.storage_capacity }}</p>{% endif %}
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <h4 class="text-primary">${{ sale.sale_price }}</h4>
+                                <small class="text-muted">Precio de venta</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Detalles del Pago</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="50%">Forma de pago:</th>
+                                <td>{{ sale.get_payment_method_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Precio de venta:</th>
+                                <td><strong>${{ sale.sale_price }}</strong></td>
+                            </tr>
+                            {% if sale.has_trade_in %}
+                            <tr>
+                                <th>Parte de pago:</th>
+                                <td>
+                                    {{ sale.trade_in_phone.model }}<br>
+                                    <small class="text-muted">IMEI: {{ sale.trade_in_phone.imei }}</small><br>
+                                    <strong class="text-danger">-${{ sale.trade_in_value }}</strong>
+                                </td>
+                            </tr>
+                            <tr class="table-success">
+                                <th>Total a pagar:</th>
+                                <td><strong>${{ sale.get_final_price }}</strong></td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        {% if sale.notes %}
+                            <h6>Notas</h6>
+                            <p class="text-muted">{{ sale.notes|linebreaks }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-qrcode me-2"></i>Código de Venta
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div id="sale-qrcode" class="mb-2"></div>
+                <small class="text-muted">Código QR de la venta</small>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Acciones</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'phone_detail' sale.phone.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-mobile-alt me-2"></i>Ver Celular
+                    </a>
+                    <a href="{% url 'customer_detail' sale.customer.id %}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-user me-2"></i>Ver Cliente
+                    </a>
+                    <a href="{% url 'sales_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list me-2"></i>Todas las Ventas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'sales_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Volver a ventas
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+    // Generar código QR de la venta
+    const saleData = `SALE:{{ sale.id }}:{{ sale.customer.name }}:{{ sale.sale_price }}`;
+    QRCode.toCanvas(document.getElementById('sale-qrcode'), saleData, {
+        width: 150,
+        height: 150,
+        margin: 2
+    });
+</script>
+{% endblock %}

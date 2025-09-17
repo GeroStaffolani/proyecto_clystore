@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario - Tienda de Celulares{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Inventario de Celulares</h1>
+    <a href="{% url 'add_phone' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Agregar Celular
+    </a>
+</div>
+
+<!-- Filtros de búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                {{ form.search }}
+            </div>
+            <div class="col-md-3">
+                {{ form.status }}
+            </div>
+            <div class="col-md-3">
+                {{ form.condition }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-search me-2"></i>Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de celulares -->
+<div class="card">
+    <div class="card-body">
+        {% if phones %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>IMEI</th>
+                            <th>Estado</th>
+                            <th>Condición</th>
+                            <th>Precio</th>
+                            <th>Agregado por</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for phone in phones %}
+                            <tr>
+                                <td>
+                                    <strong>{{ phone.model.brand.name }}</strong><br>
+                                    {{ phone.model.name }}
+                                    {% if phone.color %}
+                                        <br><small class="text-muted">{{ phone.color }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <code>{{ phone.imei }}</code>
+                                    {% if phone.storage_capacity %}
+                                        <br><small class="text-muted">{{ phone.storage_capacity }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if phone.status == 'available' %}
+                                        <span class="badge bg-success">{{ phone.get_status_display }}</span>
+                                    {% elif phone.status == 'sold' %}
+                                        <span class="badge bg-info">{{ phone.get_status_display }}</span>
+                                    {% elif phone.status == 'reserved' %}
+                                        <span class="badge bg-warning">{{ phone.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ phone.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if phone.condition == 'new' %}
+                                        <span class="badge bg-primary">{{ phone.get_condition_display }}</span>
+                                    {% elif phone.condition == 'used' %}
+                                        <span class="badge bg-warning">{{ phone.get_condition_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ phone.get_condition_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>${{ phone.price }}</strong></td>
+                                <td>{{ phone.added_by.get_full_name|default:phone.added_by.username }}</td>
+                                <td>{{ phone.created_at|date:"d/m/Y" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'phone_detail' phone.id %}" class="btn btn-outline-primary" title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if phone.can_be_sold %}
+                                            <a href="{% url 'add_sale' phone.id %}" class="btn btn-outline-success" title="Vender">
+                                                <i class="fas fa-shopping-cart"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.condition %}&condition={{ request.GET.condition }}{% endif %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.condition %}&condition={{ request.GET.condition }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.condition %}&condition={{ request.GET.condition }}{% endif %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.condition %}&condition={{ request.GET.condition }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-mobile-alt fa-3x text-muted mb-3"></i>
+                <h5>No se encontraron celulares</h5>
+                <p class="text-muted">No hay celulares que coincidan con los filtros seleccionados.</p>
+                <a href="{% url 'add_phone' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Agregar primer celular
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

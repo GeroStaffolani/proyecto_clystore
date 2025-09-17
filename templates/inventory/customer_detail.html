@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ customer.name }} - Detalle del Cliente{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">{{ customer.name }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información Personal</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">Nombre:</th>
+                                <td>{{ customer.name }}</td>
+                            </tr>
+                            {% if customer.dni %}
+                            <tr>
+                                <th>DNI:</th>
+                                <td>{{ customer.dni }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th>Registrado:</th>
+                                <td>{{ customer.created_at|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Información de Contacto</h6>
+                        <table class="table table-borderless">
+                            {% if customer.email %}
+                            <tr>
+                                <th width="30%">Email:</th>
+                                <td>
+                                    <a href="mailto:{{ customer.email }}">{{ customer.email }}</a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if customer.phone %}
+                            <tr>
+                                <th>Teléfono:</th>
+                                <td>
+                                    <a href="tel:{{ customer.phone }}">{{ customer.phone }}</a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if not customer.email and not customer.phone %}
+                            <tr>
+                                <td colspan="2" class="text-muted">Sin información de contacto</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                {% if customer.address %}
+                    <div class="mt-3">
+                        <h6>Dirección</h6>
+                        <p class="text-muted">{{ customer.address|linebreaks }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Historial de compras -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>Historial de Compras
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if sales %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Celular</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in sales %}
+                                    <tr>
+                                        <td>{{ sale.sale_date|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <strong>{{ sale.phone.model.brand.name }}</strong><br>
+                                            {{ sale.phone.model.name }}
+                                            <br><small class="text-muted">IMEI: {{ sale.phone.imei }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>${{ sale.sale_price }}</strong>
+                                            {% if sale.has_trade_in %}
+                                                <br><small class="text-muted">Con parte de pago</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if sale.is_picked_up %}
+                                                <span class="badge bg-success">Retirado</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'sale_detail' sale.id %}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Resumen de compras -->
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5 class="text-primary">{{ sales.count }}</h5>
+                                <small class="text-muted">Total Compras</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5 class="text-success">${{ sales|length|floatformat:2 }}</h5>
+                                <small class="text-muted">Total Gastado</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5 class="text-info">{{ sales.first.sale_date|date:"M Y" }}</h5>
+                                <small class="text-muted">Primera Compra</small>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-2x text-muted mb-3"></i>
+                        <h6>Sin compras registradas</h6>
+                        <p class="text-muted">Este cliente aún no ha realizado ninguna compra.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Estadísticas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-12 mb-3">
+                        <h4 class="text-primary">{{ sales.count }}</h4>
+                        <small class="text-muted">Compras Realizadas</small>
+                    </div>
+                </div>
+                
+                {% if sales %}
+                    <hr>
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Última compra:</span>
+                            <strong>{{ sales.first.sale_date|date:"d/m/Y" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Forma de pago preferida:</span>
+                            <strong>{{ sales.first.get_payment_method_display }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Cliente desde:</span>
+                            <strong>{{ customer.created_at|date:"M Y" }}</strong>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Acciones</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list me-2"></i>Todos los Clientes
+                    </a>
+                    {% if sales %}
+                        <a href="{% url 'sales_list' %}?customer={{ customer.id }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-shopping-cart me-2"></i>Ver Todas sus Compras
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'customer_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Volver a clientes
+    </a>
+</div>
+{% endblock %}

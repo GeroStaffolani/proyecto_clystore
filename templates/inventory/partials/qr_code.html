@@ -1,0 +1,15 @@
+<div class="qr-code-container text-center">
+    <div id="qr-{{ qr_data|slugify }}" class="qr-code"></div>
+    {% if label %}
+        <small class="text-muted d-block mt-1">{{ label }}</small>
+    {% endif %}
+</div>
+
+<script>
+    // Generar QR code
+    QRCode.toCanvas(document.getElementById('qr-{{ qr_data|slugify }}'), "{{ qr_data }}", {
+        width: {{ size }},
+        height: {{ size }},
+        margin: 2
+    });
+</script>

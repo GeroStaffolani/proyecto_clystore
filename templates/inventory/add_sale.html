@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Venta - {{ phone.model }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>Registrar Venta
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Información del celular -->
+                <div class="alert alert-info">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="alert-heading">{{ phone.model }}</h5>
+                            <p class="mb-1"><strong>IMEI:</strong> {{ phone.imei }}</p>
+                            <p class="mb-1"><strong>Condición:</strong> {{ phone.get_condition_display }}</p>
+                            {% if phone.color %}<p class="mb-1"><strong>Color:</strong> {{ phone.color }}</p>{% endif %}
+                            {% if phone.storage_capacity %}<p class="mb-0"><strong>Almacenamiento:</strong> {{ phone.storage_capacity }}</p>{% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h4 class="text-primary">${{ phone.price }}</h4>
+                            <small class="text-muted">Precio sugerido</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <!-- Información del cliente -->
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Información del Cliente</h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.customer.id_for_label }}" class="form-label">{{ form.customer.label }}</label>
+                                {{ form.customer }}
+                                {% if form.customer.errors %}
+                                    <div class="text-danger small">{{ form.customer.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <a href="{% url 'add_customer' %}" target="_blank">Agregar nuevo cliente</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información de la venta -->
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Información de la Venta</h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.sale_price.id_for_label }}" class="form-label">{{ form.sale_price.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.sale_price }}
+                                </div>
+                                {% if form.sale_price.errors %}
+                                    <div class="text-danger small">{{ form.sale_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.payment_method.id_for_label }}" class="form-label">{{ form.payment_method.label }}</label>
+                                {{ form.payment_method }}
+                                {% if form.payment_method.errors %}
+                                    <div class="text-danger small">{{ form.payment_method.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.is_picked_up }}
+                                    <label class="form-check-label" for="{{ form.is_picked_up.id_for_label }}">
+                                        {{ form.is_picked_up.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Parte de pago -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <div class="form-check">
+                                {{ form.has_trade_in }}
+                                <label class="form-check-label" for="{{ form.has_trade_in.id_for_label }}">
+                                    <strong>{{ form.has_trade_in.label }}</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body" id="trade-in-section" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.trade_in_phone.id_for_label }}" class="form-label">{{ form.trade_in_phone.label }}</label>
+                                    {{ form.trade_in_phone }}
+                                    {% if form.trade_in_phone.errors %}
+                                        <div class="text-danger small">{{ form.trade_in_phone.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.trade_in_value.id_for_label }}" class="form-label">{{ form.trade_in_value.label }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.trade_in_value }}
+                                    </div>
+                                    {% if form.trade_in_value.errors %}
+                                        <div class="text-danger small">{{ form.trade_in_value.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notas -->
+                    <div class="mb-3 mt-4">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'phone_detail' phone.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-shopping-cart me-2"></i>Registrar Venta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mostrar/ocultar sección de parte de pago
+    const tradeInCheckbox = document.getElementById('{{ form.has_trade_in.id_for_label }}');
+    const tradeInSection = document.getElementById('trade-in-section');
+    
+    tradeInCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            tradeInSection.style.display = 'block';
+        } else {
+            tradeInSection.style.display = 'none';
+        }
+    });
+    
+    // Verificar estado inicial
+    if (tradeInCheckbox.checked) {
+        tradeInSection.style.display = 'block';
+    }
+</script>
+{% endblock %}

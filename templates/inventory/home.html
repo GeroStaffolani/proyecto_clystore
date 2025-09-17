@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Tienda de Celulares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-3">Panel de Control</h1>
+    </div>
+</div>
+
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_phones }}</h4>
+                        <p class="card-text">Total Celulares</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-mobile-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ available_phones }}</h4>
+                        <p class="card-text">Disponibles</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ sold_phones }}</h4>
+                        <p class="card-text">Vendidos</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">${{ monthly_revenue|floatformat:2 }}</h4>
+                        <p class="card-text">Revenue Mensual</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'add_phone' %}" class="btn btn-primary btn-block">
+                            <i class="fas fa-plus me-2"></i>Agregar Celular
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'inventory_list' %}" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-list me-2"></i>Ver Inventario
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'sales_list' %}" class="btn btn-outline-success btn-block">
+                            <i class="fas fa-shopping-cart me-2"></i>Ver Ventas
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'search_phone' %}" class="btn btn-outline-info btn-block">
+                            <i class="fas fa-search me-2"></i>Buscar por QR/IMEI
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actividad reciente -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Últimos Celulares Agregados</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_phones %}
+                    <div class="list-group list-group-flush">
+                        {% for phone in recent_phones %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ phone.model }}</strong><br>
+                                    <small class="text-muted">IMEI: {{ phone.imei }}</small><br>
+                                    <small class="text-muted">Por: {{ phone.added_by.get_full_name|default:phone.added_by.username }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-{{ phone.status|yesno:'success,warning,danger' }} status-badge">
+                                        {{ phone.get_status_display }}
+                                    </span><br>
+                                    <small class="text-muted">{{ phone.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'inventory_list' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay celulares registrados aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Últimas Ventas</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_sales %}
+                    <div class="list-group list-group-flush">
+                        {% for sale in recent_sales %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ sale.customer.name }}</strong><br>
+                                    <small class="text-muted">{{ sale.phone.model }}</small><br>
+                                    <small class="text-muted">Por: {{ sale.sold_by.get_full_name|default:sale.sold_by.username }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <strong>${{ sale.sale_price }}</strong><br>
+                                    <small class="text-muted">{{ sale.sale_date|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'sales_list' %}" class="btn btn-sm btn-outline-success">Ver todas</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay ventas registradas aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

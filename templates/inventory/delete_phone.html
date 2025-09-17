@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar {{ phone.model }} - Tienda de Celulares{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">¡Atención!</h5>
+                    <p class="mb-0">Esta acción no se puede deshacer. Se eliminará permanentemente el siguiente celular:</p>
+                </div>
+                
+                <!-- Información del celular a eliminar -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>{{ phone.model }}</h5>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="30%">IMEI:</th>
+                                        <td><code>{{ phone.imei }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Estado:</th>
+                                        <td>
+                                            {% if phone.status == 'available' %}
+                                                <span class="badge bg-success">{{ phone.get_status_display }}</span>
+                                            {% elif phone.status == 'sold' %}
+                                                <span class="badge bg-info">{{ phone.get_status_display }}</span>
+                                            {% elif phone.status == 'reserved' %}
+                                                <span class="badge bg-warning">{{ phone.get_status_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ phone.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Condición:</th>
+                                        <td>{{ phone.get_condition_display }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Precio:</th>
+                                        <td><strong>${{ phone.price }}</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-4">
+                                <table class="table table-borderless">
+                                    {% if phone.color %}
+                                    <tr>
+                                        <th>Color:</th>
+                                        <td>{{ phone.color }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if phone.storage_capacity %}
+                                    <tr>
+                                        <th>Almacenamiento:</th>
+                                        <td>{{ phone.storage_capacity }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th>Agregado por:</th>
+                                        <td>{{ phone.added_by.get_full_name|default:phone.added_by.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Fecha:</th>
+                                        <td>{{ phone.created_at|date:"d/m/Y" }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        {% if phone.notes %}
+                            <div class="mt-3">
+                                <h6>Notas:</h6>
+                                <p class="text-muted">{{ phone.notes|linebreaks }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Verificaciones adicionales -->
+                {% if phone.status == 'sold' %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Este celular ya fue vendido.</strong> Eliminar este registro puede afectar los reportes de ventas.
+                    </div>
+                {% endif %}
+                
+                {% if phone.comments.count > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-comments me-2"></i>
+                        Este celular tiene <strong>{{ phone.comments.count }} comentario{{ phone.comments.count|pluralize }}</strong> que también se eliminarán.
+                    </div>
+                {% endif %}
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'phone_detail' phone.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Sí, Eliminar Celular
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

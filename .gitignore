@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# VSCode
+.vscode/
+
+# Virtualenv
+.env/
+.venv/
+ENV/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+package-lock.json
+
+# Migrations
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# Static & Media (if generated)
+staticfiles/
+media/
+
+# Exclude DB from ignore (force include)
+!db.sqlite3

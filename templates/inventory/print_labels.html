@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Imprimir Etiquetas - Tienda de Celulares{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-tags me-2"></i>Generar Etiquetas
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar Celulares</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="select-all">
+                            <label class="form-check-label" for="select-all">
+                                <strong>Seleccionar todos</strong>
+                            </label>
+                        </div>
+                        <hr>
+                        
+                        <div class="row">
+                            {% for phone in phones %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input phone-checkbox" type="checkbox" 
+                                               name="selected_phones" value="{{ phone.id }}" 
+                                               id="phone-{{ phone.id }}">
+                                        <label class="form-check-label" for="phone-{{ phone.id }}">
+                                            <strong>{{ phone.model }}</strong><br>
+                                            <small class="text-muted">IMEI: {{ phone.imei }}</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="label-type" class="form-label">Tipo de Etiqueta</label>
+                        <select name="label_type" id="label-type" class="form-control">
+                            <option value="standard">Estándar (60x40mm)</option>
+                            <option value="small">Pequeña (40x25mm)</option>
+                            <option value="large">Grande (80x50mm)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-print me-2"></i>Generar PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Vista Previa</h6>
+            </div>
+            <div class="card-body">
+                <div class="label-preview border p-3 text-center">
+                    <div class="row">
+                        <div class="col-8">
+                            <strong class="small">Samsung</strong><br>
+                            <span class="small">Galaxy S23</span><br>
+                            <small class="text-muted">IMEI: 123456789012345</small><br>
+                            <strong class="small">$899.99</strong>
+                        </div>
+                        <div class="col-4">
+                            <div class="qr-preview bg-dark" style="width: 30px; height: 30px; margin: 0 auto;"></div>
+                        </div>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    Las etiquetas incluyen información básica del celular y código QR para identificación rápida.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Seleccionar/deseleccionar todos
+    document.getElementById('select-all').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.phone-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+    
+    // Actualizar "seleccionar todos" basado en checkboxes individuales
+    document.querySelectorAll('.phone-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allCheckboxes = document.querySelectorAll('.phone-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.phone-checkbox:checked');
+            const selectAllCheckbox = document.getElementById('select-all');
+            
+            selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+        });
+    });
+</script>
+{% endblock %}

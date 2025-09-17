@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ phone.model }} - Detalle{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">{{ phone.model }}</h4>
+                <div class="btn-group">
+                    <a href="{% url 'edit_phone' phone.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-edit me-1"></i>Editar
+                    </a>
+                    {% if phone.can_be_sold %}
+                        <a href="{% url 'add_sale' phone.id %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-shopping-cart me-1"></i>Vender
+                        </a>
+                    {% endif %}
+                    {% if user.is_admin %}
+                        <a href="{% url 'delete_phone' phone.id %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash me-1"></i>Eliminar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Código Interno:</th>
+                                <td><code>{{ phone.internal_code }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Marca:</th>
+                                <td>{{ phone.model.brand.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Modelo:</th>
+                                <td>{{ phone.model.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>IMEI:</th>
+                                <td><code>{{ phone.imei }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    {% if phone.status == 'available' %}
+                                        <span class="badge bg-success">{{ phone.get_status_display }}</span>
+                                    {% elif phone.status == 'sold' %}
+                                        <span class="badge bg-info">{{ phone.get_status_display }}</span>
+                                    {% elif phone.status == 'reserved' %}
+                                        <span class="badge bg-warning">{{ phone.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ phone.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Condición:</th>
+                                <td>
+                                    {% if phone.condition == 'new' %}
+                                        <span class="badge bg-primary">{{ phone.get_condition_display }}</span>
+                                    {% elif phone.condition == 'used' %}
+                                        <span class="badge bg-warning">{{ phone.get_condition_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ phone.get_condition_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Batería:</th>
+                                <td>{{ phone.battery_percentage }}%</td>
+                            </tr>
+                            <tr>
+                                <th>Tipo de adquisición:</th>
+                                <td>{{ phone.get_acquisition_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Cliente que entregó:</th>
+                                <td>{% if phone.acquired_from %}{{ phone.acquired_from.name }}{% else %}-{% endif %}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Precio:</th>
+                                <td><strong>${{ phone.price }}</strong></td>
+                            </tr>
+                            {% if phone.storage_capacity %}
+                            <tr>
+                                <th>Almacenamiento:</th>
+                                <td>{{ phone.storage_capacity }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if phone.color %}
+                            <tr>
+                                <th>Color:</th>
+                                <td>{{ phone.color }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th>Agregado por:</th>
+                                <td>{{ phone.added_by.get_full_name|default:phone.added_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Fecha de ingreso:</th>
+                                <td>{{ phone.created_at|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Última modificación:</th>
+                                <td>{{ phone.updated_at|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if phone.notes %}
+                    <div class="mt-3">
+                        <h6>Notas:</h6>
+                        <p class="text-muted">{{ phone.notes|linebreaks }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Información de venta si existe -->
+        {% if sale %}
+            <div class="card mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Información de Venta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Cliente:</strong> {{ sale.customer.name }}</p>
+                            <p><strong>Precio de venta:</strong> ${{ sale.sale_price }}</p>
+                            <p><strong>Forma de pago:</strong> {{ sale.get_payment_method_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Vendido por:</strong> {{ sale.sold_by.get_full_name|default:sale.sold_by.username }}</p>
+                            <p><strong>Fecha de venta:</strong> {{ sale.sale_date|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Estado:</strong> 
+                                {% if sale.is_picked_up %}
+                                    <span class="badge bg-success">Retirado</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pendiente de retiro</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <a href="{% url 'sale_detail' sale.id %}" class="btn btn-outline-success">
+                            Ver detalle de venta
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar con comentarios -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-comments me-2"></i>Comentarios
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Formulario para agregar comentario -->
+                <form method="post" action="{% url 'add_comment' phone.id %}" class="mb-3">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        {{ comment_form.comment }}
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Agregar
+                    </button>
+                </form>
+                
+                <!-- Lista de comentarios -->
+                {% if comments %}
+                    <div class="comments-list">
+                        {% for comment in comments %}
+                            <div class="border-bottom pb-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <strong class="small">{{ comment.user.get_full_name|default:comment.user.username }}</strong>
+                                    <small class="text-muted">{{ comment.created_at|date:"d/m H:i" }}</small>
+                                </div>
+                                <p class="small mb-0 mt-1">{{ comment.comment|linebreaks }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small">No hay comentarios aún.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Código QR -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div id="qrcode" class="mb-2"></div>
+                <small class="text-muted">Escanea para acceso rápido</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'inventory_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Volver al inventario
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+    // Generar código QR
+    const qrData = "{{ phone.get_qr_data }}";
+    QRCode.toCanvas(document.getElementById('qrcode'), qrData, {
+        width: 150,
+        height: 150,
+        margin: 2
+    });
+</script>
+{% endblock %}
