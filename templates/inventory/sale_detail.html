@@ -136,9 +136,40 @@
                         </table>
                     </div>
                     <div class="col-md-6">
-                        {% if sale.notes %}
-                            <h6>Notas</h6>
-                            <p class="text-muted">{{ sale.notes|linebreaks }}</p>
+                        {% if payments %}
+                            <h6>Desglose de pago</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Tipo</th>
+                                            <th>Monto</th>
+                                            <th>Cotización</th>
+                                            <th>Tarjeta/Cuotas</th>
+                                            <th>USD</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in payments %}
+                                            <tr>
+                                                <td>{{ forloop.counter }}</td>
+                                                <td>{% if p.tipo == 'cash_ars' %}Efectivo ARS{% elif p.tipo == 'cash_usd' %}Efectivo USD{% elif p.tipo == 'card' %}Tarjeta{% elif p.tipo == 'transfer' %}Transferencia{% else %}{{ p.tipo }}{% endif %}</td>
+                                                <td>{{ p.monto }} {{ p.moneda }}</td>
+                                                <td>{% if p.moneda == 'ARS' %}{{ p.cotizacion }}{% endif %}</td>
+                                                <td>{% if p.tipo == 'card' %}{{ p.tarjeta }}{% if p.cuotas %} {{ p.cuotas }} cuotas{% endif %}{% endif %}</td>
+                                                <td>{{ p.usd_equiv|floatformat:2 }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        {% if payments_total_usd %}
+                                            <tr class="table-light">
+                                                <th colspan="5" class="text-end">Total USD estimado</th>
+                                                <th>{{ payments_total_usd|floatformat:2 }}</th>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
                         {% endif %}
                     </div>
                 </div>

@@ -310,25 +310,119 @@ def add_sale(request, phone_id):
     Registrar venta de un celular
     """
     phone = get_object_or_404(Phone, id=phone_id)
-    
-    # Verificar que el celular se puede vender
     if not phone.can_be_sold():
         messages.error(request, 'Este celular no está disponible para venta.')
         return redirect('phone_detail', phone_id=phone.id)
-    
+    from .forms import SalePaymentDetailForm
+    payment_detail_form = None
     if request.method == 'POST':
         form = SaleForm(request.POST, phone=phone)
-        if form.is_valid():
+        payment_detail_form = SalePaymentDetailForm(request.POST)
+        if form.is_valid() and payment_detail_form.is_valid():
             sale = form.save(commit=False)
             sale.phone = phone
             sale.sold_by = request.user
+
+            # NUEVO: procesar JSON de pagos mixtos si existe
+            raw_json = request.POST.get('payment_breakdown_json', '').strip()
+            payment_components = []
+            parsed_ok = False
+            errors = []
+            if raw_json:
+                try:
+                    data = json.loads(raw_json)
+                    if isinstance(data, list):
+                        comp_index = 0
+                        total_usd = 0
+                        lines = []
+                        for comp in data:
+                            comp_index += 1
+                            tipo = comp.get('tipo') or ''
+                            monto = comp.get('monto')
+                            moneda = comp.get('moneda') or ''
+                            cotiz = comp.get('cotizacion')
+                            cuotas = comp.get('cuotas')
+                            tarjeta = comp.get('tarjeta')
+                            # Validaciones básicas
+                            if not monto or monto <= 0:
+                                errors.append(f'Componente {comp_index}: monto inválido')
+                                continue
+                            if moneda not in ('ARS', 'USD'):
+                                errors.append(f'Componente {comp_index}: moneda inválida')
+                                continue
+                            if moneda == 'ARS' and (not cotiz or cotiz <= 0):
+                                errors.append(f'Componente {comp_index}: cotización requerida para ARS')
+                                continue
+                            if tipo == 'card' and not tarjeta:
+                                errors.append(f'Componente {comp_index}: tarjeta requerida para pago con tarjeta')
+                                continue
+                            # Calcular USD estimado
+                            if moneda == 'USD':
+                                usd_equiv = float(monto)
+                            else:
+                                usd_equiv = float(monto) / float(cotiz)
+                            total_usd += usd_equiv
+                            detail_parts = []
+                            if tipo == 'cash_ars':
+                                detail_parts.append('Efectivo ARS')
+                            elif tipo == 'cash_usd':
+                                detail_parts.append('Efectivo USD')
+                            elif tipo == 'card':
+                                detail_parts.append('Tarjeta')
+                            else:
+                                # fallback genérico
+                                detail_parts.append(tipo)
+                            detail_parts.append(f"{monto} {moneda}")
+                            if moneda == 'ARS':
+                                detail_parts.append(f"@{cotiz}")
+                            if tipo == 'card':
+                                card_extra = tarjeta
+                                if cuotas:
+                                    card_extra += f" {cuotas} cuotas"
+                                detail_parts.append(f"({card_extra})")
+                            detail_parts.append(f"=> USD {usd_equiv:.2f}")
+                            lines.append(f"{comp_index}) {' '.join(detail_parts)}")
+                            payment_components.append({
+                                'tipo': tipo,
+                                'monto': monto,
+                                'moneda': moneda,
+                                'cotizacion': cotiz,
+                                'cuotas': cuotas,
+                                'tarjeta': tarjeta,
+                                'usd_equiv': round(usd_equiv, 2)
+                            })
+                        if lines:
+                            parsed_ok = True
+                            header = 'Pago mixto:' if len(lines) > 1 else 'Pago:'
+                            block = [header] + lines + [f"Total estimado USD: {total_usd:.2f}"]
+                            # Adjuntar a notas existentes
+                            extra_notes = '\n' + '\n'.join(block) + '\n[PAYMENTS_JSON] ' + json.dumps(payment_components, ensure_ascii=False)
+                            sale.notes = (sale.notes or '') + extra_notes
+                    else:
+                        errors.append('Formato de JSON inválido')
+                except json.JSONDecodeError:
+                    errors.append('No se pudo parsear el JSON de pagos')
+            # Si no se procesó JSON, mantener la lógica antigua mínima (por compatibilidad)
+            if not parsed_ok:
+                metodo = payment_detail_form.cleaned_data.get('metodo')
+                if metodo == 'pesos':
+                    monto = payment_detail_form.cleaned_data.get('monto_pesos')
+                    cotiz = payment_detail_form.cleaned_data.get('cotizacion')
+                    sale.notes = (sale.notes or '') + f"\nPago en pesos: ${monto} (Cotización USD: {cotiz})"
+                elif metodo == 'mixto':
+                    monto = payment_detail_form.cleaned_data.get('monto_pesos')
+                    cotiz = payment_detail_form.cleaned_data.get('cotizacion')
+                    sale.notes = (sale.notes or '') + f"\nPago mixto, pesos: ${monto} (Cotización USD: {cotiz})"
             sale.save()
+            if errors:
+                for e in errors:
+                    messages.warning(request, e)
             messages.success(request, f'Venta registrada exitosamente.')
             return redirect('sale_detail', sale_id=sale.id)
     else:
         form = SaleForm(phone=phone)
-    
-    return render(request, 'inventory/add_sale.html', {'form': form, 'phone': phone})
+        payment_detail_form = SalePaymentDetailForm()
+    return render(request, 'inventory/add_sale.html', {'form': form, 'phone': phone, 'payment_detail_form': payment_detail_form})
 
 
 @login_required
@@ -337,7 +431,38 @@ def sale_detail(request, sale_id):
     Detalle de una venta
     """
     sale = get_object_or_404(Sale, id=sale_id)
-    return render(request, 'inventory/sale_detail.html', {'sale': sale})
+    payments = []
+    payments_total_usd = None
+    notes_display = sale.notes or ''
+    if sale.notes and '[PAYMENTS_JSON]' in sale.notes:
+        marker = '[PAYMENTS_JSON]'
+        idx = sale.notes.rfind(marker)
+        if idx != -1:
+            raw_json = sale.notes[idx + len(marker):].strip()
+            # recortar la parte del marcador de las notas visibles
+            notes_display = (sale.notes[:idx]).rstrip()
+            try:
+                data = json.loads(raw_json)
+                if isinstance(data, list):
+                    payments = data
+                    # calcular total si viene usd_equiv
+                    total = 0
+                    for c in payments:
+                        try:
+                            total += float(c.get('usd_equiv') or 0)
+                        except (TypeError, ValueError):
+                            pass
+                    payments_total_usd = round(total, 2)
+            except json.JSONDecodeError:
+                # Si algo falla dejamos las notas tal cual (con el JSON crudo)
+                notes_display = sale.notes
+    context = {
+        'sale': sale,
+        'payments': payments,
+        'payments_total_usd': payments_total_usd,
+        'notes_display': notes_display,
+    }
+    return render(request, 'inventory/sale_detail.html', context)
 
 
 @login_required

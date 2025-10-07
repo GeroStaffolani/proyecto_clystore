@@ -38,6 +38,25 @@
                             <h5 class="mb-3">Información del Cliente</h5>
                             
                             <div class="mb-3">
+                                <!-- ...existing code... -->
+                                <div id="payment-detail-section" style="display:none;" class="mt-3">
+                                    <label for="{{ payment_detail_form.metodo.id_for_label }}" class="form-label">Moneda de pago</label>
+                                    {{ payment_detail_form.metodo }}
+                                    <div id="pesos-fields" style="display:none;">
+                                        <label for="{{ payment_detail_form.monto_pesos.id_for_label }}" class="form-label mt-2">Monto abonado en pesos</label>
+                                        {{ payment_detail_form.monto_pesos }}
+                                        <label for="{{ payment_detail_form.cotizacion.id_for_label }}" class="form-label mt-2">Cotización del USD</label>
+                                        {{ payment_detail_form.cotizacion }}
+                                    </div>
+                                </div>
+                                <div id="card-detail-section" style="display:none;" class="mt-3">
+                                    <label for="{{ card_detail_form.tarjeta.id_for_label }}" class="form-label">Tarjeta utilizada</label>
+                                    {{ card_detail_form.tarjeta }}
+                                    <label for="{{ card_detail_form.monto_pesos.id_for_label }}" class="form-label mt-2">Monto total en pesos</label>
+                                    {{ card_detail_form.monto_pesos }}
+                                    <label for="{{ card_detail_form.cuotas.id_for_label }}" class="form-label mt-2">Cantidad de cuotas</label>
+                                    {{ card_detail_form.cuotas }}
+                                </div>
                                 <label for="{{ form.customer.id_for_label }}" class="form-label">{{ form.customer.label }}</label>
                                 {{ form.customer }}
                                 {% if form.customer.errors %}
@@ -56,7 +75,7 @@
                             <div class="mb-3">
                                 <label for="{{ form.sale_price.id_for_label }}" class="form-label">{{ form.sale_price.label }}</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">USD</span>
                                     {{ form.sale_price }}
                                 </div>
                                 {% if form.sale_price.errors %}
@@ -70,6 +89,30 @@
                                 {% if form.payment_method.errors %}
                                     <div class="text-danger small">{{ form.payment_method.errors }}</div>
                                 {% endif %}
+                                <div id="mixed-builder" style="display:none;" class="mt-3">
+                                    <h6 class="mb-2">Componentes del Pago</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle" id="mixed-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:18%">Tipo</th>
+                                                    <th style="width:15%">Monto</th>
+                                                    <th style="width:15%">Moneda</th>
+                                                    <th style="width:15%">Cotización</th>
+                                                    <th style="width:15%">Cuotas</th>
+                                                    <th style="width:15%">Tarjeta</th>
+                                                    <th style="width:7%"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mixed-rows"></tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-component-btn">
+                                        <i class="fas fa-plus me-1"></i>Agregar componente
+                                    </button>
+                                    <input type="hidden" name="payment_breakdown_json" id="payment_breakdown_json">
+                                    <div class="mt-3 small text-muted" id="mixed-summary"></div>
+                                </div>
                             </div>
                             
                             <div class="mb-3">
@@ -143,21 +186,94 @@
 
 {% block extra_js %}
 <script>
-    // Mostrar/ocultar sección de parte de pago
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethodSelect = document.getElementById('{{ form.payment_method.id_for_label }}');
+    const cardDetailSection = document.getElementById('card-detail-section');
+    const mixedBuilder = document.getElementById('mixed-builder');
+    const mixedRows = document.getElementById('mixed-rows');
+    const addComponentBtn = document.getElementById('add-component-btn');
+    const paymentBreakdownInput = document.getElementById('payment_breakdown_json');
+    const mixedSummary = document.getElementById('mixed-summary');
+
+    const PAYMENT_TYPES = [
+        {value:'cash_ars', label:'Efectivo ARS', currency:'ARS'},
+        {value:'cash_usd', label:'Efectivo USD', currency:'USD'},
+        {value:'card', label:'Tarjeta', currency:'ARS'},
+        {value:'transfer', label:'Transferencia', currency:'ARS'},
+    ];
+
+    function createSelectType() {
+        const sel = document.createElement('select');
+        sel.className = 'form-select form-select-sm';
+        PAYMENT_TYPES.forEach(t => { const o=document.createElement('option'); o.value=t.value; o.textContent=t.label; sel.appendChild(o); });
+        return sel;
+    }
+    function createInput(type, placeholder, step='0.01') {
+        const inp = document.createElement('input'); inp.type=type; inp.placeholder=placeholder; inp.className='form-control form-control-sm'; if(type==='number') inp.step=step; return inp;
+    }
+    function addComponentRow(prefill) {
+        const tr=document.createElement('tr');
+        const tdType=document.createElement('td'); const tdAmount=document.createElement('td'); const tdCurrency=document.createElement('td'); const tdRate=document.createElement('td'); const tdInstall=document.createElement('td'); const tdCard=document.createElement('td'); const tdActions=document.createElement('td');
+        const selType=createSelectType();
+        const inpAmount=createInput('number','Monto');
+        const selCurrency=document.createElement('select'); selCurrency.className='form-select form-select-sm'; ['ARS','USD'].forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;selCurrency.appendChild(o);});
+        const inpRate=createInput('number','Cotización'); inpRate.step='0.01';
+        const inpInstall=createInput('number','Cuotas','1');
+        const inpCard=createInput('text','Tarjeta');
+        const btnDel=document.createElement('button'); btnDel.type='button'; btnDel.className='btn btn-outline-danger btn-sm'; btnDel.innerHTML='<i class="fas fa-trash"></i>';
+        btnDel.addEventListener('click', ()=>{tr.remove(); serializeMixed();});
+        selType.addEventListener('change', ()=>adjustRow(selType, selCurrency, inpRate, inpInstall, inpCard));
+        [inpAmount, selCurrency, inpRate, inpInstall, inpCard].forEach(el=>el.addEventListener('input', serializeMixed));
+        tdType.appendChild(selType); tdAmount.appendChild(inpAmount); tdCurrency.appendChild(selCurrency); tdRate.appendChild(inpRate); tdInstall.appendChild(inpInstall); tdCard.appendChild(inpCard); tdActions.appendChild(btnDel);
+        [tdType,tdAmount,tdCurrency,tdRate,tdInstall,tdCard,tdActions].forEach(td=>tr.appendChild(td));
+        mixedRows.appendChild(tr);
+        if(prefill){ selType.value=prefill.tipo||'cash_ars'; inpAmount.value=prefill.monto||''; selCurrency.value=prefill.moneda||(prefill.tipo==='cash_usd'?'USD':'ARS'); inpRate.value=prefill.cotizacion||''; inpInstall.value=prefill.cuotas||''; inpCard.value=prefill.tarjeta||''; }
+        adjustRow(selType, selCurrency, inpRate, inpInstall, inpCard); serializeMixed();
+    }
+    function adjustRow(selType, selCurrency, inpRate, inpInstall, inpCard) {
+        const type=selType.value;
+        if(type==='cash_usd'){
+            // For USD cash: fixed USD, no cotización
+            selCurrency.value='USD';
+            selCurrency.disabled=true;
+            inpRate.disabled=true; inpRate.value='';
+        } else {
+            // Allow currency change
+            selCurrency.disabled=false;
+            if(selCurrency.value==='USD') {
+                // If user picks USD manually for something that's not cash_usd, still no rate
+                inpRate.disabled=true; inpRate.value='';
+            } else {
+                // ARS paths (cash_ars, transfer, card) -> enable cotización
+                inpRate.disabled=false;
+            }
+        }
+        const isCard = type==='card'; inpInstall.disabled=!isCard; inpCard.disabled=!isCard; if(!isCard){inpInstall.value=''; inpCard.value='';}
+    }
+    function serializeMixed() {
+        const rows=Array.from(mixedRows.querySelectorAll('tr'));
+        const data=rows.map(r=>{ const [selType, inpAmount, selCurrency, inpRate, inpInstall, inpCard]=r.querySelectorAll('select, input'); return {tipo:selType.value, monto:inpAmount.value?parseFloat(inpAmount.value):null, moneda:selCurrency.value, cotizacion:inpRate.value?parseFloat(inpRate.value):null, cuotas:inpInstall.value?parseInt(inpInstall.value):null, tarjeta:inpCard.value||null}; });
+        paymentBreakdownInput.value=JSON.stringify(data); updateSummary(data);
+    }
+    function updateSummary(data){ if(!data.length){mixedSummary.textContent=''; return;} let totalUSD=0; data.forEach(d=>{ if(!d.monto) return; if(d.moneda==='USD') totalUSD+=d.monto; else if(d.moneda==='ARS'){ if(d.cotizacion) totalUSD+= d.monto/d.cotizacion; }}); mixedSummary.innerHTML=`Total estimado USD: <strong>${totalUSD.toFixed(2)}</strong>`; }
+    if(addComponentBtn){ addComponentBtn.addEventListener('click', ()=>addComponentRow()); }
+    function togglePaymentSections(){
+        const method = paymentMethodSelect.value;
+        if(method==='mixed') { mixedBuilder.style.display='block'; if(!mixedRows.querySelector('tr')) addComponentRow(); }
+        else { mixedBuilder.style.display='none'; }
+        if(method==='card'){ cardDetailSection && (cardDetailSection.style.display='block'); }
+        else { cardDetailSection && (cardDetailSection.style.display='none'); }
+    }
+    paymentMethodSelect.addEventListener('change', togglePaymentSections);
+    togglePaymentSections();
+
+    // Parte de pago toggle
     const tradeInCheckbox = document.getElementById('{{ form.has_trade_in.id_for_label }}');
     const tradeInSection = document.getElementById('trade-in-section');
-    
-    tradeInCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            tradeInSection.style.display = 'block';
-        } else {
-            tradeInSection.style.display = 'none';
-        }
-    });
-    
-    // Verificar estado inicial
-    if (tradeInCheckbox.checked) {
-        tradeInSection.style.display = 'block';
+    if(tradeInCheckbox){
+        tradeInCheckbox.addEventListener('change', ()=>{ tradeInSection.style.display = tradeInCheckbox.checked ? 'block':'none'; });
+        if(tradeInCheckbox.checked) tradeInSection.style.display='block';
     }
+});
 </script>
 {% endblock %}

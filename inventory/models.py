@@ -151,12 +151,15 @@ class Phone(models.Model):
     """
     Modelo principal para los celulares en inventario
     """
+    # Estados ajustados para inventario con foco en usados
+    # Orden lógico: Stock -> Reservado -> Vendido -> Servicio técnico -> En camino -> Depósito
     STATUS_CHOICES = [
-        ('available', 'Disponible'),
+        ('available', 'Stock'),          # antes Disponible
         ('reserved', 'Reservado'),
         ('sold', 'Vendido'),
+        ('service', 'Servicio técnico'), # nuevo (reemplaza damaged como estado operativo)
         ('in_transit', 'En camino'),
-        ('damaged', 'Dañado'),
+        ('warehouse', 'Depósito'),       # nuevo: almacenado fuera de sala de ventas
     ]
     
     CONDITION_CHOICES = [

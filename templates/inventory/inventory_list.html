@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load inventory_extras %}
 
 {% block title %}Inventario - Tienda de Celulares{% endblock %}
 
@@ -76,15 +77,7 @@
                                             {% endfor %}
                                         </select>
                                     {% else %}
-                                        {% if phone.status == 'available' %}
-                                            <span class="badge bg-success">{{ phone.get_status_display }}</span>
-                                        {% elif phone.status == 'sold' %}
-                                            <span class="badge bg-info">{{ phone.get_status_display }}</span>
-                                        {% elif phone.status == 'reserved' %}
-                                            <span class="badge bg-warning">{{ phone.get_status_display }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ phone.get_status_display }}</span>
-                                        {% endif %}
+                                        {% phone_status_badge phone %}
                                     {% endif %}
                                 </td>
                                 <td>

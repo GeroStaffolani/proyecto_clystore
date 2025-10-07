@@ -205,3 +205,47 @@ class PhoneModelForm(forms.ModelForm):
         self.fields['name'].label = 'Nombre del modelo'
         self.fields['base_price'].label = 'Precio base'
         self.fields['is_active'].label = '¿Está activo?'
+
+
+class SalePaymentDetailForm(forms.Form):
+    monto_pesos = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        label='Monto abonado en pesos',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100000'})
+    )
+    cotizacion = forms.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        required=False,
+        label='Cotización del USD',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 950'})
+    )
+    metodo = forms.ChoiceField(
+        choices=[('pesos', 'Pesos Argentinos'), ('usd', 'Dólares'), ('mixto', 'Mixto')],
+        required=False,
+        label='Moneda de pago',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+
+class SaleCardDetailForm(forms.Form):
+    tarjeta = forms.CharField(
+        max_length=50,
+        required=False,
+        label='Tarjeta utilizada',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Visa, Mastercard'})
+    )
+    monto_pesos = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        label='Monto total en pesos',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100000'})
+    )
+    cuotas = forms.IntegerField(
+        required=False,
+        label='Cantidad de cuotas',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 3'})
+    )

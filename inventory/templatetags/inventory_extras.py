@@ -77,11 +77,14 @@ def phone_status_badge(phone):
     Renderiza un badge del estado del celular
     """
     status_colors = {
-        'available': 'success',
-        'sold': 'info',
-        'reserved': 'warning',
-        'in_transit': 'secondary',
-        'damaged': 'danger'
+        # Colores optimizados estilo Bootstrap para estados actuales
+        'available': 'success',        # Stock - verde
+        'reserved': 'info',            # Reservado - celeste
+        'sold': 'warning',             # Vendido - amarillo
+        'service': 'danger',           # Servicio técnico - rojo
+        'in_transit': 'secondary',     # En camino - gris
+        'warehouse': 'dark',           # Depósito - gris oscuro
+        'damaged': 'danger',           # Legacy / fallback
     }
     
     return {
