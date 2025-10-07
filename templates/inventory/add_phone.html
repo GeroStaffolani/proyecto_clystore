@@ -18,7 +18,12 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.model.id_for_label }}" class="form-label">{{ form.model.label }}</label>
-                            {{ form.model }}
+                            <div class="input-group">
+                                {{ form.model }}
+                                {% if user.role == 'admin' %}
+                                    <a href="{% url 'add_phone_model' %}" class="btn btn-outline-success ms-2">Agregar modelo</a>
+                                {% endif %}
+                            </div>
                             {% if form.model.errors %}
                                 <div class="text-danger small">{{ form.model.errors }}</div>
                             {% endif %}

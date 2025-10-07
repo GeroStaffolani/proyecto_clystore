@@ -11,7 +11,7 @@ import json
 from .models import Phone, PhoneModel, Brand, Sale, Customer, PhoneComment, CustomUser
 from .forms import (
     PhoneForm, PhoneCommentForm, SaleForm, CustomerForm, 
-    PhoneSearchForm, CustomUserCreationForm
+    PhoneSearchForm, CustomUserCreationForm, PhoneModelForm
 )
 from .services import InventoryService, SalesService, ReportService
 
@@ -26,23 +26,22 @@ def home(request):
     """
     Página principal con resumen del sistema
     """
+    if hasattr(request.user, 'role') and request.user.role == 'employee':
+        return redirect('inventory_new_list')
     # Estadísticas generales
     total_phones = Phone.objects.count()
     available_phones = Phone.objects.filter(status='available').count()
     sold_phones = Phone.objects.filter(status='sold').count()
     reserved_phones = Phone.objects.filter(status='reserved').count()
-    
     # Ventas del mes actual
     current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     monthly_sales = Sale.objects.filter(sale_date__gte=current_month).count()
     monthly_revenue = Sale.objects.filter(
         sale_date__gte=current_month
     ).aggregate(total=Sum('sale_price'))['total'] or 0
-    
     # Últimas actividades
     recent_phones = Phone.objects.select_related('model__brand', 'added_by').order_by('-created_at')[:5]
     recent_sales = Sale.objects.select_related('phone__model__brand', 'customer', 'sold_by').order_by('-sale_date')[:5]
-    
     context = {
         'total_phones': total_phones,
         'available_phones': available_phones,
@@ -53,7 +52,6 @@ def home(request):
         'recent_phones': recent_phones,
         'recent_sales': recent_sales,
     }
-    
     return render(request, 'inventory/home.html', context)
 
 
@@ -503,3 +501,39 @@ def register_user(request):
         form = CustomUserCreationForm()
     
     return render(request, 'inventory/register_user.html', {'form': form})
+
+
+@login_required
+def update_phone_status(request, phone_id):
+    """Actualiza el estado de un teléfono vía AJAX (solo admin)"""
+    if not request.user.is_admin():
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            new_status = data.get('status')
+            phone = get_object_or_404(Phone, id=phone_id)
+            if new_status in dict(phone.STATUS_CHOICES):
+                phone.status = new_status
+                phone.save(update_fields=['status'])
+                return JsonResponse({'success': True, 'new_status': new_status})
+            else:
+                return JsonResponse({'success': False, 'error': 'Estado inválido'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+@login_required
+def add_phone_model(request):
+    """Permite al admin agregar un nuevo modelo de celular"""
+    if not request.user.is_admin():
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        form = PhoneModelForm(request.POST)
+        if form.is_valid():
+            model = form.save()
+            messages.success(request, f'Modelo {model} agregado exitosamente.')
+            return redirect('add_phone_model')
+    else:
+        form = PhoneModelForm()
+    return render(request, 'inventory/add_phone_model.html', {'form': form})

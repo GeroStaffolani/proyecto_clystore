@@ -3,45 +3,6 @@
 {% block title %}Inicio - Tienda de Celulares{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h1 class="h3 mb-3">Panel de Control</h1>
-    </div>
-</div>
-
-<!-- Estadísticas principales -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ total_phones }}</h4>
-                        <p class="card-text">Total Celulares</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-mobile-alt fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ available_phones }}</h4>
-                        <p class="card-text">Disponibles</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <div class="col-md-3 mb-3">
         <div class="card bg-info text-white">
@@ -110,8 +71,47 @@
         </div>
     </div>
 </div>
-
 <!-- Actividad reciente -->
+        {% if user.role != 'employee' %}
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ sold_phones }}</h4>
+                                <p class="card-text">Vendidos</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-shopping-cart fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">${{ monthly_revenue|floatformat:2 }}</h4>
+                                <p class="card-text">Revenue Mensual</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-dollar-sign fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="row">
+                <div class="col-12 text-center py-5">
+                    <h2>Bienvenido</h2>
+                    <p class="text-muted">No tienes acceso al panel principal.</p>
+                </div>
+            </div>
+        {% endif %}
 <div class="row">
     <div class="col-md-6">
         <div class="card">

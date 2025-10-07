@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Phone, PhoneComment, Customer, Sale
+from .models import CustomUser, Phone, PhoneComment, Customer, Sale, PhoneModel
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -185,3 +185,23 @@ class PhoneSearchForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'}),
         label='Condición'
     )
+
+
+class PhoneModelForm(forms.ModelForm):
+    class Meta:
+        model = PhoneModel
+        fields = ['brand', 'name', 'base_price', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'base_price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'brand': forms.Select(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Personalizar labels
+        self.fields['brand'].label = 'Marca'
+        self.fields['name'].label = 'Nombre del modelo'
+        self.fields['base_price'].label = 'Precio base'
+        self.fields['is_active'].label = '¿Está activo?'

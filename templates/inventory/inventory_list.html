@@ -5,9 +5,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3">Inventario de Celulares</h1>
-    <a href="{% url 'add_phone' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>Agregar Celular
-    </a>
+    {% if user.role == 'admin' %}
+        <a href="{% url 'add_phone' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Agregar Celular
+        </a>
+    {% endif %}
 </div>
 
 <!-- Filtros de búsqueda -->
@@ -67,14 +69,22 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if phone.status == 'available' %}
-                                        <span class="badge bg-success">{{ phone.get_status_display }}</span>
-                                    {% elif phone.status == 'sold' %}
-                                        <span class="badge bg-info">{{ phone.get_status_display }}</span>
-                                    {% elif phone.status == 'reserved' %}
-                                        <span class="badge bg-warning">{{ phone.get_status_display }}</span>
+                                    {% if user.role == 'admin' %}
+                                        <select class="form-select form-select-sm status-dropdown" data-phone-id="{{ phone.id }}">
+                                            {% for value, label in phone.STATUS_CHOICES %}
+                                                <option value="{{ value }}" {% if phone.status == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
                                     {% else %}
-                                        <span class="badge bg-secondary">{{ phone.get_status_display }}</span>
+                                        {% if phone.status == 'available' %}
+                                            <span class="badge bg-success">{{ phone.get_status_display }}</span>
+                                        {% elif phone.status == 'sold' %}
+                                            <span class="badge bg-info">{{ phone.get_status_display }}</span>
+                                        {% elif phone.status == 'reserved' %}
+                                            <span class="badge bg-warning">{{ phone.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ phone.get_status_display }}</span>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                                 <td>
@@ -105,6 +115,33 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.status-dropdown').forEach(function(dropdown) {
+                    dropdown.addEventListener('change', function() {
+                        const phoneId = this.getAttribute('data-phone-id');
+                        const newStatus = this.value;
+                        fetch(`/inventory/${phoneId}/update_status/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Opcional: mostrar mensaje de éxito
+                            } else {
+                                alert('Error al actualizar el estado');
+                            }
+                        })
+                        .catch(() => alert('Error de conexión'));
+                    });
+                });
+            });
+            </script>
             </div>
             
             <!-- Paginación -->

@@ -10,10 +10,12 @@ urlpatterns = [
     path('inventario/usados/', views.inventory_used_list, name='inventory_used_list'),
     path('inventory/', views.inventory_list, name='inventory_list'),
     path('inventory/add/', views.add_phone, name='add_phone'),
+    path('inventory/add_model/', views.add_phone_model, name='add_phone_model'),
     path('inventory/<uuid:phone_id>/', views.phone_detail, name='phone_detail'),
     path('inventory/<uuid:phone_id>/edit/', views.edit_phone, name='edit_phone'),
     path('inventory/<uuid:phone_id>/delete/', views.delete_phone, name='delete_phone'),
     path('inventory/<uuid:phone_id>/comment/', views.add_comment, name='add_comment'),
+    path('inventory/<uuid:phone_id>/update_status/', views.update_phone_status, name='update_phone_status'),
     
     # Gestión de ventas
     path('sales/', views.sales_list, name='sales_list'),
