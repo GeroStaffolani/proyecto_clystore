@@ -72,6 +72,32 @@ class PhoneForm(forms.ModelForm):
         self.fields['storage_capacity'].widget.attrs['placeholder'] = 'ej: 128GB'
         self.fields['color'].widget.attrs['placeholder'] = 'ej: Negro'
 
+        # Ocultar y no requerir 'battery_percentage' si es nuevo
+        condition_value = self.data.get('condition') or self.initial.get('condition') or self.fields['condition'].initial
+        if condition_value == 'new':
+            self.fields['battery_percentage'].required = False
+            self.fields['battery_percentage'].widget = forms.HiddenInput()
+        else:
+            self.fields['battery_percentage'].required = True
+
+        # El campo siempre está presente, solo es obligatorio si corresponde
+        self.fields['acquired_from'].widget.attrs['class'] = 'form-control'
+        if condition_value in ['used', 'trade_in']:
+            self.fields['acquired_from'].required = True
+        else:
+            self.fields['acquired_from'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        condition = cleaned_data.get('condition')
+        battery_percentage = cleaned_data.get('battery_percentage')
+        acquired_from = cleaned_data.get('acquired_from')
+        if condition == 'used' and battery_percentage in [None, '']:
+            self.add_error('battery_percentage', 'Este campo es obligatorio para celulares usados.')
+        if condition in ['used', 'trade_in'] and not acquired_from:
+            self.add_error('acquired_from', 'Debes seleccionar el cliente que entregó el celular.')
+        return cleaned_data
+
 
 class PhoneCommentForm(forms.ModelForm):
     """
@@ -190,10 +216,9 @@ class PhoneSearchForm(forms.Form):
 class PhoneModelForm(forms.ModelForm):
     class Meta:
         model = PhoneModel
-        fields = ['brand', 'name', 'base_price', 'is_active']
+        fields = ['brand', 'name', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'base_price': forms.NumberInput(attrs={'class': 'form-control'}),
             'brand': forms.Select(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -203,7 +228,6 @@ class PhoneModelForm(forms.ModelForm):
         # Personalizar labels
         self.fields['brand'].label = 'Marca'
         self.fields['name'].label = 'Nombre del modelo'
-        self.fields['base_price'].label = 'Precio base'
         self.fields['is_active'].label = '¿Está activo?'
 
 

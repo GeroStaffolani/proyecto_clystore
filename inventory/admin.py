@@ -31,7 +31,7 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(PhoneModel)
 class PhoneModelAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'name', 'base_price', 'is_active', 'created_at')
+    list_display = ('brand', 'name', 'is_active', 'created_at')
     list_filter = ('brand', 'is_active', 'created_at')
     search_fields = ('name', 'brand__name')
 

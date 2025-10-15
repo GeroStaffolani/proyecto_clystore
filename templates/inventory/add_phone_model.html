@@ -29,11 +29,6 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <label for="{{ form.base_price.id_for_label }}" class="form-label">Precio base</label>
-                        {{ form.base_price }}
-                        {% if form.base_price.errors %}
-                            <div class="text-danger small">{{ form.base_price.errors }}</div>
-                        {% endif %}
                     </div>
                     <div class="form-check mb-3">
                         {{ form.is_active }}

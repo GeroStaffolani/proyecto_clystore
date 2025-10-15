@@ -30,6 +30,39 @@
                 </div>
                 
                 <form method="post">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.battery_percentage.id_for_label }}" class="form-label">{{ form.battery_percentage.label }}</label>
+                            {{ form.battery_percentage }}
+                            {% if form.battery_percentage.errors %}
+                                <div class="text-danger small">{{ form.battery_percentage.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.acquisition_type.id_for_label }}" class="form-label">{{ form.acquisition_type.label }}</label>
+                            {{ form.acquisition_type }}
+                            {% if form.acquisition_type.errors %}
+                                <div class="text-danger small">{{ form.acquisition_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.acquired_from.id_for_label }}" class="form-label">{{ form.acquired_from.label }}</label>
+                            <div class="input-group">
+                                {{ form.acquired_from }}
+                                <a href="{% url 'add_customer' %}" class="btn btn-outline-success ms-2">Agregar cliente</a>
+                            </div>
+                            {% if form.acquired_from.errors %}
+                                <div class="text-danger small">{{ form.acquired_from.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.internal_code.id_for_label }}" class="form-label">{{ form.internal_code.label }}</label>
+                        {{ form.internal_code }}
+                        {% if form.internal_code.errors %}
+                            <div class="text-danger small">{{ form.internal_code.errors }}</div>
+                        {% endif %}
+                    </div>
                     {% csrf_token %}
                     
                     <div class="row">

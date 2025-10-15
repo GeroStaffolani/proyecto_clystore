@@ -1,0 +1,121 @@
+/* Mejorar contraste en tablas y badges */
+table, th, td {
+    color: #f5f5f5 !important;
+    background: #222 !important;
+}
+th {
+    font-weight: 700;
+    color: #fff !important;
+    background: #181818 !important;
+}
+td {
+    color: #e0e0e0 !important;
+}
+.badge, .status-badge {
+    color: #222 !important;
+    background: #ffe066 !important;
+    font-weight: 700;
+}
+.input-group-text {
+    background: #333 !important;
+    color: #fff !important;
+    border: none;
+}
+.form-label {
+    color: #fff !important;
+}
+body {
+    background: #181818;
+    color: #f5f5f5;
+    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+}
+
+.navbar, .card-header {
+    background: #111;
+    color: #fff;
+    border-bottom: 2px solid #222;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: #fff !important;
+}
+
+
+.nav-link, .dropdown-item {
+    color: #f5f5f5 !important;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nav-link:hover, .dropdown-item:hover {
+    color: #00e0ff !important;
+}
+
+.sidebar {
+    background: #646464;
+    color: #f5f5f5;
+}
+
+.card {
+    background: #222;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+    border: none;
+}
+
+.card-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #00e0ff 0%, #7f7fff 100%);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    background: #333;
+    color: #fff;
+    border: none;
+}
+
+input, select, textarea {
+    background: #181818 !important;
+    color: #fff !important;
+    border: 1px solid #333 !important;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #00e0ff !important;
+    box-shadow: 0 0 0 2px #00e0ff33;
+}
+
+.alert {
+    background: #222;
+    color: #ff4f4f;
+    border: 1px solid #ff4f4f;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    background: #222;
+}
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    .card-title {
+        font-size: 1.2rem;
+    }
+}

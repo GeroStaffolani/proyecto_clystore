@@ -91,11 +91,6 @@ class PhoneModel(models.Model):
         max_length=100,
         verbose_name='Nombre del modelo'
     )
-    base_price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Precio base'
-    )
     is_active = models.BooleanField(
         default=True,
         verbose_name='Activo'
