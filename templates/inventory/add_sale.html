@@ -38,27 +38,13 @@
                             <h5 class="mb-3">Información del Cliente</h5>
                             
                             <div class="mb-3">
-                                <!-- ...existing code... -->
-                                <div id="payment-detail-section" style="display:none;" class="mt-3">
-                                    <label for="{{ payment_detail_form.metodo.id_for_label }}" class="form-label">Moneda de pago</label>
-                                    {{ payment_detail_form.metodo }}
-                                    <div id="pesos-fields" style="display:none;">
-                                        <label for="{{ payment_detail_form.monto_pesos.id_for_label }}" class="form-label mt-2">Monto abonado en pesos</label>
-                                        {{ payment_detail_form.monto_pesos }}
-                                        <label for="{{ payment_detail_form.cotizacion.id_for_label }}" class="form-label mt-2">Cotización del USD</label>
-                                        {{ payment_detail_form.cotizacion }}
-                                    </div>
-                                </div>
-                                <div id="card-detail-section" style="display:none;" class="mt-3">
-                                    <label for="{{ card_detail_form.tarjeta.id_for_label }}" class="form-label">Tarjeta utilizada</label>
-                                    {{ card_detail_form.tarjeta }}
-                                    <label for="{{ card_detail_form.monto_pesos.id_for_label }}" class="form-label mt-2">Monto total en pesos</label>
-                                    {{ card_detail_form.monto_pesos }}
-                                    <label for="{{ card_detail_form.cuotas.id_for_label }}" class="form-label mt-2">Cantidad de cuotas</label>
-                                    {{ card_detail_form.cuotas }}
-                                </div>
                                 <label for="{{ form.customer.id_for_label }}" class="form-label">{{ form.customer.label }}</label>
-                                {{ form.customer }}
+                                <div class="customer-search-container position-relative">
+                                    <input type="text" id="customer-search-sale" class="form-control" placeholder="Buscar cliente por nombre, teléfono, email o DNI..." autocomplete="off">
+                                    <div id="customer-dropdown-sale" class="dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+                                    {{ form.customer }}
+                                    <div id="selected-customer-info-sale" class="small text-muted mt-1" style="display: none;"></div>
+                                </div>
                                 {% if form.customer.errors %}
                                     <div class="text-danger small">{{ form.customer.errors }}</div>
                                 {% endif %}
@@ -274,6 +260,99 @@ document.addEventListener('DOMContentLoaded', function() {
         tradeInCheckbox.addEventListener('change', ()=>{ tradeInSection.style.display = tradeInCheckbox.checked ? 'block':'none'; });
         if(tradeInCheckbox.checked) tradeInSection.style.display='block';
     }
+
+    // Customer search functionality for sales
+    const customerSearchSale = document.getElementById('customer-search-sale');
+    const customerDropdownSale = document.getElementById('customer-dropdown-sale');
+    const customerFieldSale = document.getElementById('id_customer');
+    const selectedCustomerInfoSale = document.getElementById('selected-customer-info-sale');
+    let searchTimeoutSale;
+
+    // Ocultar el select original
+    if (customerFieldSale) {
+        customerFieldSale.style.display = 'none';
+    }
+
+    // Configurar el valor inicial si hay uno seleccionado
+    if (customerFieldSale && customerFieldSale.value) {
+        const selectedOption = customerFieldSale.querySelector(`option[value="${customerFieldSale.value}"]`);
+        if (selectedOption) {
+            customerSearchSale.value = selectedOption.textContent.trim();
+            selectedCustomerInfoSale.textContent = `Cliente seleccionado: ${selectedOption.textContent.trim()}`;
+            selectedCustomerInfoSale.style.display = 'block';
+        }
+    }
+
+    customerSearchSale.addEventListener('input', function() {
+        clearTimeout(searchTimeoutSale);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            customerDropdownSale.style.display = 'none';
+            return;
+        }
+
+        searchTimeoutSale = setTimeout(() => {
+            fetch(`{% url 'search_customers' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    customerDropdownSale.innerHTML = '';
+                    
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(customer => {
+                            const item = document.createElement('a');
+                            item.className = 'dropdown-item';
+                            item.href = '#';
+                            item.innerHTML = `
+                                <div>
+                                    <strong>${customer.name}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        ${customer.phone ? 'Tel: ' + customer.phone : ''} 
+                                        ${customer.email ? 'Email: ' + customer.email : ''}
+                                        ${customer.dni ? 'DNI: ' + customer.dni : ''}
+                                    </small>
+                                </div>
+                            `;
+                            
+                            item.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                customerSearchSale.value = customer.name;
+                                customerFieldSale.value = customer.id;
+                                selectedCustomerInfoSale.textContent = `Cliente seleccionado: ${customer.display_text}`;
+                                selectedCustomerInfoSale.style.display = 'block';
+                                customerDropdownSale.style.display = 'none';
+                            });
+                            
+                            customerDropdownSale.appendChild(item);
+                        });
+                        customerDropdownSale.style.display = 'block';
+                    } else {
+                        customerDropdownSale.innerHTML = '<div class="dropdown-item-text text-muted">No se encontraron clientes</div>';
+                        customerDropdownSale.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching customers:', error);
+                    customerDropdownSale.style.display = 'none';
+                });
+        }, 300);
+    });
+
+    // Cerrar dropdown cuando se hace click fuera
+    document.addEventListener('click', function(e) {
+        if (!customerSearchSale.contains(e.target) && !customerDropdownSale.contains(e.target)) {
+            customerDropdownSale.style.display = 'none';
+        }
+    });
+
+    // Limpiar selección cuando se borra el campo
+    customerSearchSale.addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            customerFieldSale.value = '';
+            selectedCustomerInfoSale.style.display = 'none';
+        }
+    });
 });
 </script>
 {% endblock %}
