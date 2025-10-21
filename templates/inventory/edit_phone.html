@@ -48,7 +48,13 @@
                         <div class="col-md-4 mb-3" id="acquired-from-group">
                             <label for="{{ form.acquired_from.id_for_label }}" class="form-label">{{ form.acquired_from.label }}</label>
                             <div class="input-group">
-                                {{ form.acquired_from }}
+                                <div class="customer-search-container position-relative flex-grow-1">
+                                    <input type="text" id="customer-search" class="form-control" placeholder="Buscar cliente por nombre, teléfono, email o DNI..." autocomplete="off">
+                                    <div id="customer-dropdown" class="dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                    </div>
+                                    {{ form.acquired_from }}
+                                    <div id="selected-customer-info" class="small text-muted mt-1" style="display: none;"></div>
+                                </div>
                                 <a href="{% url 'add_customer' %}" class="btn btn-outline-success ms-2">Agregar cliente</a>
                             </div>
                             {% if form.acquired_from.errors %}
@@ -172,6 +178,99 @@
                         conditionField.addEventListener('change', updateFields);
                         updateFields(); // Call immediately to set initial state
                     }
+
+                    // Customer search functionality
+                    const customerSearch = document.getElementById('customer-search');
+                    const customerDropdown = document.getElementById('customer-dropdown');
+                    const acquiredFromField = document.getElementById('id_acquired_from');
+                    const selectedCustomerInfo = document.getElementById('selected-customer-info');
+                    let searchTimeout;
+
+                    // Ocultar el select original
+                    if (acquiredFromField) {
+                        acquiredFromField.style.display = 'none';
+                    }
+
+                    // Configurar el valor inicial si hay uno seleccionado
+                    if (acquiredFromField && acquiredFromField.value) {
+                        const selectedOption = acquiredFromField.querySelector(`option[value="${acquiredFromField.value}"]`);
+                        if (selectedOption) {
+                            customerSearch.value = selectedOption.textContent.trim();
+                            selectedCustomerInfo.textContent = `Cliente seleccionado: ${selectedOption.textContent.trim()}`;
+                            selectedCustomerInfo.style.display = 'block';
+                        }
+                    }
+
+                    customerSearch.addEventListener('input', function() {
+                        clearTimeout(searchTimeout);
+                        const query = this.value.trim();
+                        
+                        if (query.length < 2) {
+                            customerDropdown.style.display = 'none';
+                            return;
+                        }
+
+                        searchTimeout = setTimeout(() => {
+                            fetch(`{% url 'search_customers' %}?q=${encodeURIComponent(query)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    customerDropdown.innerHTML = '';
+                                    
+                                    if (data.results && data.results.length > 0) {
+                                        data.results.forEach(customer => {
+                                            const item = document.createElement('a');
+                                            item.className = 'dropdown-item';
+                                            item.href = '#';
+                                            item.innerHTML = `
+                                                <div>
+                                                    <strong>${customer.name}</strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        ${customer.phone ? 'Tel: ' + customer.phone : ''} 
+                                                        ${customer.email ? 'Email: ' + customer.email : ''}
+                                                        ${customer.dni ? 'DNI: ' + customer.dni : ''}
+                                                    </small>
+                                                </div>
+                                            `;
+                                            
+                                            item.addEventListener('click', function(e) {
+                                                e.preventDefault();
+                                                customerSearch.value = customer.name;
+                                                acquiredFromField.value = customer.id;
+                                                selectedCustomerInfo.textContent = `Cliente seleccionado: ${customer.display_text}`;
+                                                selectedCustomerInfo.style.display = 'block';
+                                                customerDropdown.style.display = 'none';
+                                            });
+                                            
+                                            customerDropdown.appendChild(item);
+                                        });
+                                        customerDropdown.style.display = 'block';
+                                    } else {
+                                        customerDropdown.innerHTML = '<div class="dropdown-item-text text-muted">No se encontraron clientes</div>';
+                                        customerDropdown.style.display = 'block';
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error searching customers:', error);
+                                    customerDropdown.style.display = 'none';
+                                });
+                        }, 300);
+                    });
+
+                    // Cerrar dropdown cuando se hace click fuera
+                    document.addEventListener('click', function(e) {
+                        if (!customerSearch.contains(e.target) && !customerDropdown.contains(e.target)) {
+                            customerDropdown.style.display = 'none';
+                        }
+                    });
+
+                    // Limpiar selección cuando se borra el campo
+                    customerSearch.addEventListener('input', function() {
+                        if (this.value.trim() === '') {
+                            acquiredFromField.value = '';
+                            selectedCustomerInfo.style.display = 'none';
+                        }
+                    });
                 });
                 </script>
             </div>

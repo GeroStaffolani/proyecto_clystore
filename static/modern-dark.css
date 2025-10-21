@@ -1,0 +1,42 @@
+/* ========================================
+   CUSTOMER SEARCH AUTOCOMPLETE
+======================================== */
+.customer-search-container {
+    position: relative;
+}
+
+.customer-search-container .dropdown-menu {
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    max-height: 250px;
+    overflow-y: auto;
+    background-color: #ffffff;
+}
+
+.customer-search-container .dropdown-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #212529;
+}
+
+.customer-search-container .dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+.customer-search-container .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.customer-search-container .dropdown-item-text {
+    padding: 0.75rem 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+#id_acquired_from[style*="display: none"] {
+    display: none !important;
+}

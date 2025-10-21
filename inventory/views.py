@@ -662,3 +662,34 @@ def add_phone_model(request):
     else:
         form = PhoneModelForm()
     return render(request, 'inventory/add_phone_model.html', {'form': form})
+
+
+@login_required
+def search_customers(request):
+    """
+    Vista para buscar clientes via AJAX para autocompletado
+    """
+    if request.method == 'GET':
+        query = request.GET.get('q', '').strip()
+        if len(query) >= 2:  # Solo buscar si hay al menos 2 caracteres
+            customers = Customer.objects.filter(
+                Q(name__icontains=query) | 
+                Q(email__icontains=query) | 
+                Q(phone__icontains=query) |
+                Q(dni__icontains=query)
+            ).order_by('name')[:20]  # Limitar a 20 resultados
+            
+            results = []
+            for customer in customers:
+                results.append({
+                    'id': customer.id,
+                    'name': customer.name,
+                    'email': customer.email or '',
+                    'phone': customer.phone or '',
+                    'dni': customer.dni or '',
+                    'display_text': f"{customer.name} - {customer.phone or customer.email or customer.dni}"
+                })
+            
+            return JsonResponse({'results': results})
+    
+    return JsonResponse({'results': []})
