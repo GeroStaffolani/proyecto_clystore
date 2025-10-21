@@ -72,30 +72,28 @@ class PhoneForm(forms.ModelForm):
         self.fields['storage_capacity'].widget.attrs['placeholder'] = 'ej: 128GB'
         self.fields['color'].widget.attrs['placeholder'] = 'ej: Negro'
 
-        # Ocultar y no requerir 'battery_percentage' si es nuevo
-        condition_value = self.data.get('condition') or self.initial.get('condition') or self.fields['condition'].initial
-        if condition_value == 'new':
-            self.fields['battery_percentage'].required = False
-            self.fields['battery_percentage'].widget = forms.HiddenInput()
-        else:
-            self.fields['battery_percentage'].required = True
+        # El campo battery_percentage siempre se renderiza como input normal
+        # La visibilidad se controla con JavaScript
+        self.fields['battery_percentage'].required = False
 
-        # El campo siempre está presente, solo es obligatorio si corresponde
+        # El campo siempre está presente, la validación se hace en clean()
         self.fields['acquired_from'].widget.attrs['class'] = 'form-control'
-        if condition_value in ['used', 'trade_in']:
-            self.fields['acquired_from'].required = True
-        else:
-            self.fields['acquired_from'].required = False
+        self.fields['acquired_from'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
         condition = cleaned_data.get('condition')
         battery_percentage = cleaned_data.get('battery_percentage')
         acquired_from = cleaned_data.get('acquired_from')
-        if condition == 'used' and battery_percentage in [None, '']:
+        
+        # Validar battery_percentage para condiciones usadas
+        if condition in ['used', 'refurbished', 'trade_in'] and battery_percentage in [None, '']:
             self.add_error('battery_percentage', 'Este campo es obligatorio para celulares usados.')
+        
+        # Validar acquired_from para condiciones que requieren cliente
         if condition in ['used', 'trade_in'] and not acquired_from:
             self.add_error('acquired_from', 'Debes seleccionar el cliente que entregó el celular.')
+        
         return cleaned_data
 
 

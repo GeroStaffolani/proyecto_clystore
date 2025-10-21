@@ -86,6 +86,9 @@
                                 <div class="text-danger small">{{ form.storage_capacity.errors }}</div>
                             {% endif %}
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-4 mb-3" id="battery-percentage-group">
                             <label for="{{ form.battery_percentage.id_for_label }}" class="form-label">{{ form.battery_percentage.label }}</label>
                             {{ form.battery_percentage }}
@@ -140,24 +143,34 @@
                 </form>
                 <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    var conditionField = document.getElementById('{{ form.condition.id_for_label }}');
+                    var conditionField = document.getElementById('id_condition');
                     var batteryGroup = document.getElementById('battery-percentage-group');
                     var acquiredGroup = document.getElementById('acquired-from-group');
+                    
                     function updateFields() {
                         var value = conditionField.value;
+                        console.log('Condition value:', value); // Para debug
+                        
                         if (value === 'new') {
                             batteryGroup.style.display = 'none';
                             acquiredGroup.style.display = 'none';
                         } else if (value === 'used' || value === 'trade_in') {
                             batteryGroup.style.display = 'block';
                             acquiredGroup.style.display = 'block';
-                        } else {
+                        } else if (value === 'refurbished') {
                             batteryGroup.style.display = 'block';
+                            acquiredGroup.style.display = 'none';
+                        } else {
+                            // Default case
+                            batteryGroup.style.display = 'none';
                             acquiredGroup.style.display = 'none';
                         }
                     }
-                    conditionField.addEventListener('change', updateFields);
-                    updateFields();
+                    
+                    if (conditionField) {
+                        conditionField.addEventListener('change', updateFields);
+                        updateFields(); // Call immediately to set initial state
+                    }
                 });
                 </script>
             </div>
