@@ -1,89 +1,82 @@
 {% extends 'base.html' %}
 
-{% block title %}Reportes - Tienda de Celulares{% endblock %}
+{% block title %}Reportes - ClyStore{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3">Reportes y Estadísticas</h1>
-    <div class="btn-group">
-        <button type="button" class="btn btn-outline-primary" onclick="window.print()">
-            <i class="fas fa-print me-2"></i>Imprimir
-        </button>
-        <button type="button" class="btn btn-outline-success" onclick="exportToCSV()">
-            <i class="fas fa-file-csv me-2"></i>Exportar CSV
-        </button>
+<div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1><i class="fas fa-chart-line me-2 text-primary"></i>Reportes y Análisis</h1>
+            <p class="text-secondary mb-0">Métricas y estadísticas del negocio</p>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Imprimir
+            </button>
+            <button type="button" class="btn btn-outline-success" onclick="exportToCSV()">
+                <i class="fas fa-file-excel me-2"></i>Exportar Excel
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- Resumen ejecutivo -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white">
+<!-- Métricas Clave -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card metric-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h4>{{ inventory_stats.total_phones }}</h4>
-                        <p class="mb-0">Total Celulares</p>
+                        <p class="text-secondary mb-1 small text-uppercase">Ingresos del Mes</p>
+                        <h2 class="mb-1">${{ monthly_revenue.current_month|floatformat:0 }}</h2>
+                        {% if monthly_revenue.change_percent > 0 %}
+                            <span class="badge bg-success-soft text-success">
+                                <i class="fas fa-arrow-up"></i> +{{ monthly_revenue.change_percent|floatformat:1 }}% vs mes anterior
+                            </span>
+                        {% elif monthly_revenue.change_percent < 0 %}
+                            <span class="badge bg-danger-soft text-danger">
+                                <i class="fas fa-arrow-down"></i> {{ monthly_revenue.change_percent|floatformat:1 }}% vs mes anterior
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-soft">Sin cambios</span>
+                        {% endif %}
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-mobile-alt fa-2x"></i>
+                    <div class="metric-icon bg-primary-soft">
+                        <i class="fas fa-dollar-sign text-primary"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
+    <div class="col-md-4">
+        <div class="card metric-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h4>{{ sales_stats.total_sales }}</h4>
-                        <p class="mb-0">Total Ventas</p>
+                        <p class="text-secondary mb-1 small text-uppercase">Vendidos Este Mes</p>
+                        <h2 class="mb-1">{{ sales_stats.total_sales }}</h2>
+                        <span class="text-muted small">celulares</span>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    <div class="metric-icon bg-success-soft">
+                        <i class="fas fa-shopping-cart text-success"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white">
+    <div class="col-md-4">
+        <div class="card metric-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h4>${{ sales_stats.total_revenue|floatformat:2 }}</h4>
-                        <p class="mb-0">Revenue Total</p>
+                        <p class="text-secondary mb-1 small text-uppercase">Stock Actual</p>
+                        <h2 class="mb-1">{{ inventory_stats.total_phones }}</h2>
+                        <span class="text-muted small">celulares disponibles</span>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-dollar-sign fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>${{ monthly_revenue.current_month|floatformat:2 }}</h4>
-                        <p class="mb-0">Revenue Mensual</p>
-                        <small>
-                            {% if monthly_revenue.change_percent > 0 %}
-                                <i class="fas fa-arrow-up"></i> +{{ monthly_revenue.change_percent }}%
-                            {% elif monthly_revenue.change_percent < 0 %}
-                                <i class="fas fa-arrow-down"></i> {{ monthly_revenue.change_percent }}%
-                            {% else %}
-                                <i class="fas fa-minus"></i> 0%
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-chart-line fa-2x"></i>
+                    <div class="metric-icon bg-info-soft">
+                        <i class="fas fa-boxes text-info"></i>
                     </div>
                 </div>
             </div>
@@ -91,120 +84,217 @@
     </div>
 </div>
 
-<!-- Gráficos y estadísticas detalladas -->
-<div class="row">
-    <!-- Ventas por forma de pago -->
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Ventas por Forma de Pago</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="paymentChart" width="400" height="200"></canvas>
-                <div class="mt-3">
-                    {% for item in sales_stats.payment_stats %}
-                        <div class="d-flex justify-content-between">
-                            <span>{{ item.payment_method|title }}:</span>
-                            <strong>{{ item.count }} (${{ item.revenue|floatformat:2 }})</strong>
+<!-- Ventas por Condición -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Ventas por Condición</h5>
+    </div>
+    <div class="card-body">
+        {% if sales_stats.by_condition %}
+            <div class="condition-stats">
+                {% for item in sales_stats.by_condition %}
+                    <div class="stat-row mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">{{ item.phone__condition|title }}:</span>
+                            <span class="fw-bold">${{ item.total_revenue|floatformat:0 }} ({{ item.percentage|floatformat:0 }}%)</span>
                         </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Top marcas -->
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Inventario por Marca</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="brandChart" width="400" height="200"></canvas>
-                <div class="mt-3">
-                    {% for item in inventory_stats.by_brand %}
-                        <div class="d-flex justify-content-between">
-                            <span>{{ item.model__brand__name }}:</span>
-                            <strong>{{ item.count }}</strong>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {{ item.percentage }}%"
+                                 aria-valuenow="{{ item.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ item.count }} ventas
+                            </div>
                         </div>
-                    {% endfor %}
-                </div>
+                    </div>
+                {% endfor %}
             </div>
-        </div>
+        {% else %}
+            <p class="text-muted">No hay datos de ventas disponibles.</p>
+        {% endif %}
     </div>
 </div>
 
-<!-- Modelos más vendidos -->
-<div class="row">
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Modelos Más Vendidos</h5>
+<!-- Top 5 Modelos Vendidos -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-trophy me-2 text-warning"></i>Top 5 Modelos Vendidos</h5>
+    </div>
+    <div class="card-body">
+        {% if top_models %}
+            <div class="list-group list-group-flush">
+                {% for model in top_models|slice:":5" %}
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="rank-badge">{{ forloop.counter }}</span>
+                                <div>
+                                    <div class="fw-medium">{{ model.brand.name }} {{ model.name }}</div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary-soft text-primary fs-6">{{ model.sales_count }} unidades</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">No hay datos de ventas disponibles.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Métodos de Pago -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-credit-card me-2 text-success"></i>Métodos de Pago</h5>
             </div>
             <div class="card-body">
-                {% if top_models %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Posición</th>
-                                    <th>Marca</th>
-                                    <th>Modelo</th>
-                                    <th>Ventas</th>
-                                    <th>Precio Base</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for model in top_models %}
-                                    <tr>
-                                        <td>{{ forloop.counter }}</td>
-                                        <td>{{ model.brand.name }}</td>
-                                        <td>{{ model.name }}</td>
-                                        <td><span class="badge bg-success">{{ model.sales_count }}</span></td>
-                                        <td>${{ model.base_price }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                {% if sales_stats.payment_stats %}
+                    <div class="payment-stats">
+                        {% for item in sales_stats.payment_stats %}
+                            <div class="payment-row mb-3 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <span class="payment-icon me-2">
+                                            {% if item.payment_method == 'card' %}
+                                                <i class="fas fa-credit-card text-primary"></i>
+                                            {% elif item.payment_method == 'cash' %}
+                                                <i class="fas fa-money-bill-wave text-success"></i>
+                                            {% elif item.payment_method == 'transfer' %}
+                                                <i class="fas fa-exchange-alt text-info"></i>
+                                            {% else %}
+                                                <i class="fas fa-wallet text-secondary"></i>
+                                            {% endif %}
+                                        </span>
+                                        <span class="fw-medium">
+                                            {% if item.payment_method == 'card' %}
+                                                Tarjeta
+                                            {% elif item.payment_method == 'cash' %}
+                                                Efectivo
+                                            {% elif item.payment_method == 'transfer' %}
+                                                Transferencia
+                                            {% elif item.payment_method == 'mixed' %}
+                                                Mixto
+                                            {% else %}
+                                                {{ item.payment_method|title }}
+                                            {% endif %}:
+                                        </span>
+                                    </div>
+                                    <span class="fw-bold">${{ item.revenue|floatformat:0 }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted small">
+                                    <span>{{ item.count }} ventas</span>
+                                    <span>{{ item.percentage|floatformat:0 }}% del total</span>
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted">No hay datos de ventas disponibles.</p>
+                    <p class="text-muted">No hay datos disponibles.</p>
                 {% endif %}
             </div>
         </div>
     </div>
-</div>
-
-<!-- Ventas mensuales -->
-<div class="row">
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Evolución de Ventas (Últimos 12 Meses)</h5>
+    
+    <!-- Movimiento de Inventario -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-exchange-alt me-2 text-info"></i>Movimiento de Inventario</h5>
             </div>
             <div class="card-body">
-                <canvas id="monthlyChart" width="400" height="100"></canvas>
+                <div class="inventory-movement">
+                    <div class="movement-item mb-3 p-3 bg-success-soft rounded">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="movement-icon bg-success text-white">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-medium">Agregados este mes</div>
+                                <div class="text-muted small">Nuevos celulares ingresados</div>
+                            </div>
+                            <div class="h4 mb-0">{{ inventory_stats.added_this_month }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="movement-item mb-3 p-3 bg-primary-soft rounded">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="movement-icon bg-primary text-white">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-medium">Vendidos este mes</div>
+                                <div class="text-muted small">Celulares entregados</div>
+                            </div>
+                            <div class="h4 mb-0">{{ sales_stats.total_sales }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="movement-item p-3 bg-warning-soft rounded">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="movement-icon bg-warning text-white">
+                                <i class="fas fa-sync"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-medium">Rotación promedio</div>
+                                <div class="text-muted small">Días en inventario</div>
+                            </div>
+                            <div class="h4 mb-0">{{ inventory_stats.avg_rotation|default:"N/A" }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Alertas y Recomendaciones -->
+{% if inventory_stats.old_stock or top_models.0 %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-lightbulb me-2 text-warning"></i>Alertas y Recomendaciones</h5>
+    </div>
+    <div class="card-body">
+        <div class="alerts-list">
+            {% if inventory_stats.old_stock > 0 %}
+                <div class="alert alert-warning d-flex align-items-center mb-3">
+                    <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
+                    <div>
+                        <strong>Stock antiguo detectado:</strong> Hay {{ inventory_stats.old_stock }} celular(es) en stock hace más de 60 días.
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if top_models.0 %}
+                <div class="alert alert-info d-flex align-items-center mb-3">
+                    <i class="fas fa-star me-3 fs-4"></i>
+                    <div>
+                        <strong>Modelo estrella:</strong> {{ top_models.0.brand.name }} {{ top_models.0.name }} es tu modelo más vendido este mes.
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if monthly_revenue.change_percent > 0 %}
+                <div class="alert alert-success d-flex align-items-center mb-0">
+                    <i class="fas fa-chart-line me-3 fs-4"></i>
+                    <div>
+                        <strong>Crecimiento positivo:</strong> Tus ventas aumentaron {{ monthly_revenue.change_percent|floatformat:1 }}% respecto al mes anterior.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Configuración de colores
-    const colors = {
-        primary: '#007bff',
-        success: '#28a745',
-        info: '#17a2b8',
-        warning: '#ffc107',
-        danger: '#dc3545',
-        secondary: '#6c757d'
-    };
-    // Función para exportar a CSV
     function exportToCSV() {
-        // Aquí se implementaría la lógica de exportación
         alert('Funcionalidad de exportación en desarrollo');
     }
 </script>

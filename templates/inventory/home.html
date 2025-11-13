@@ -1,142 +1,158 @@
 {% extends 'base.html' %}
 
-{% block title %}Inicio - Tienda de Celulares{% endblock %}
+{% block title %}Inicio - ClyStore{% endblock %}
 
 {% block content %}
-    
-    <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ sold_phones }}</h4>
-                        <p class="card-text">Vendidos</p>
+<div class="page-header">
+    <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
+    <p class="text-secondary">Accesos directos a las tareas más comunes</p>
+</div>
+
+<!-- Tarjetas de Acciones Rápidas -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <a href="{% url 'inventory_new_list' %}" class="text-decoration-none">
+            <div class="card action-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="action-icon mb-3">
+                        <i class="fas fa-shopping-cart fa-3x text-primary"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-shopping-cart fa-2x"></i>
-                    </div>
+                    <h4 class="card-title mb-2">Vender Nuevo</h4>
+                    <p class="text-secondary mb-0">Buscar en inventario y registrar una venta</p>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">${{ monthly_revenue|floatformat:2 }}</h4>
-                        <p class="card-text">Revenue Mensual</p>
+    <div class="col-md-4">
+        <a href="{% url 'add_phone' %}" class="text-decoration-none">
+            <div class="card action-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="action-icon mb-3">
+                        <i class="fas fa-plus-circle fa-3x text-success"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-dollar-sign fa-2x"></i>
-                    </div>
+                    <h4 class="card-title mb-2">Agregar Celular</h4>
+                    <p class="text-secondary mb-0">Registrar nuevo celular al inventario</p>
                 </div>
             </div>
-        </div>
+        </a>
+    </div>
+    
+    <div class="col-md-4">
+        <a href="{% url 'inventory_new_list' %}" class="text-decoration-none">
+            <div class="card action-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="action-icon mb-3">
+                        <i class="fas fa-mobile-alt fa-3x text-info"></i>
+                    </div>
+                    <h4 class="card-title mb-2">Inventario Nuevos</h4>
+                    <p class="text-secondary mb-0">Ver todos los celulares nuevos en stock</p>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
 
-<!-- Acciones rápidas -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Acciones Rápidas</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-2">
-                        <a href="{% url 'add_phone' %}" class="btn btn-primary btn-block">
-                            <i class="fas fa-plus me-2"></i>Agregar Celular
-                        </a>
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <a href="{% url 'inventory_used_list' %}" class="text-decoration-none">
+            <div class="card action-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="action-icon mb-3">
+                        <i class="fas fa-boxes fa-3x text-warning"></i>
                     </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{% url 'inventory_list' %}" class="btn btn-outline-primary btn-block">
-                            <i class="fas fa-list me-2"></i>Ver Inventario
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{% url 'sales_list' %}" class="btn btn-outline-success btn-block">
-                            <i class="fas fa-shopping-cart me-2"></i>Ver Ventas
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{% url 'search_phone' %}" class="btn btn-outline-info btn-block">
-                            <i class="fas fa-search me-2"></i>Buscar por QR/IMEI
-                        </a>
-                    </div>
+                    <h4 class="card-title mb-2">Ver Inventario Usados</h4>
+                    <p class="text-secondary mb-0">Consultar stock completo de celulares</p>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-<!-- Actividad reciente -->
-      
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Últimos Celulares Agregados</h5>
-            </div>
-            <div class="card-body">
-                {% if recent_phones %}
-                    <div class="list-group list-group-flush">
-                        {% for phone in recent_phones %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>{{ phone.model }}</strong><br>
-                                    <small class="text-muted">IMEI: {{ phone.imei }}</small><br>
-                                    <small class="text-muted">Por: {% if phone.added_by %}{{ phone.added_by.get_full_name|default:phone.added_by.username }}{% else %}N/A{% endif %}</small>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge bg-{{ phone.status|yesno:'success,warning,danger' }} status-badge">
-                                        {{ phone.get_status_display }}
-                                    </span><br>
-                                    <small class="text-muted">{{ phone.created_at|date:"d/m/Y H:i" }}</small>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div class="text-center mt-3">
-                        <a href="{% url 'inventory_list' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
-                    </div>
-                {% else %}
-                    <p class="text-muted">No hay celulares registrados aún.</p>
-                {% endif %}
-            </div>
-        </div>
+        </a>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Últimas Ventas</h5>
-            </div>
-            <div class="card-body">
-                {% if recent_sales %}
-                    <div class="list-group list-group-flush">
-                        {% for sale in recent_sales %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>{{ sale.customer.name }}</strong><br>
-                                    <small class="text-muted">{{ sale.phone.model }}</small><br>
-                                    <small class="text-muted">Por: {% if sale.sold_by %}{{ sale.sold_by.get_full_name|default:sale.sold_by.username }}{% else %}N/A{% endif %}</small>
-                                </div>
-                                <div class="text-end">
-                                    <strong>${{ sale.sale_price }}</strong><br>
-                                    <small class="text-muted">{{ sale.sale_date|date:"d/m/Y H:i" }}</small>
-                                </div>
-                            </div>
-                        {% endfor %}
+    <div class="col-md-4">
+        <a href="{% url 'customer_list' %}" class="text-decoration-none">
+            <div class="card action-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="action-icon mb-3">
+                        <i class="fas fa-users fa-3x text-purple"></i>
                     </div>
-                    <div class="text-center mt-3">
-                        <a href="{% url 'sales_list' %}" class="btn btn-sm btn-outline-success">Ver todas</a>
-                    </div>
-                {% else %}
-                    <p class="text-muted">No hay ventas registradas aún.</p>
-                {% endif %}
+                    <h4 class="card-title mb-2">Clientes</h4>
+                    <p class="text-secondary mb-0">Gestionar base de datos de clientes</p>
+                </div>
             </div>
+        </a>
+    </div>
+    
+    {% if user.is_staff %}
+    <div class="col-md-4">
+        <a href="{% url 'reports' %}" class="text-decoration-none">
+            <div class="card action-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="action-icon mb-3">
+                        <i class="fas fa-chart-line fa-3x text-danger"></i>
+                    </div>
+                    <h4 class="card-title mb-2">Reportes</h4>
+                    <p class="text-secondary mb-0">Ver estadísticas y reportes del negocio</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Actividad Reciente -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>Últimas Actividades</h5>
+    </div>
+    <div class="card-body">
+        <div class="activity-feed">
+            {% if recent_phones or recent_sales %}
+                {% for phone in recent_phones|slice:":5" %}
+                    <div class="activity-item">
+                        <div class="activity-icon bg-success">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="mb-1">
+                                <strong>{{ phone.model }}</strong> agregado al stock
+                                <span class="badge bg-light text-dark ms-2">{{ phone.get_condition_display }}</span>
+                            </p>
+                            <small class="text-muted">
+                                <i class="far fa-clock me-1"></i>{{ phone.created_at|timesince }} 
+                                {% if phone.added_by %}
+                                    • Por {{ phone.added_by.get_full_name|default:phone.added_by.username }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                {% for sale in recent_sales|slice:":5" %}
+                    <div class="activity-item">
+                        <div class="activity-icon bg-primary">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="mb-1">
+                                Venta realizada a <strong>{{ sale.customer.name }}</strong>
+                                <span class="badge bg-success ms-2">${{ sale.sale_price }}</span>
+                            </p>
+                            <small class="text-muted">
+                                <i class="far fa-clock me-1"></i>{{ sale.sale_date|timesince }}
+                                • {{ sale.phone.model }}
+                                {% if sale.sold_by %}
+                                    • Por {{ sale.sold_by.get_full_name|default:sale.sold_by.username }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay actividad reciente aún.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
