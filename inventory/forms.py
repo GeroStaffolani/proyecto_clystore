@@ -142,11 +142,19 @@ class SaleForm(forms.ModelForm):
     """
     Formulario para registrar ventas
     """
+    trade_in_model = forms.ModelChoiceField(
+        queryset=PhoneModel.objects.filter(brand__name='Apple', is_active=True),
+        required=False,
+        label='Modelo iPhone en parte de pago',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Seleccionar modelo...'
+    )
+    
     class Meta:
         model = Sale
         fields = [
             'customer', 'sale_price', 'payment_method', 'is_picked_up',
-            'has_trade_in', 'trade_in_phone', 'trade_in_value', 'notes'
+            'has_trade_in', 'trade_in_value', 'notes'
         ]
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3}),
@@ -167,19 +175,12 @@ class SaleForm(forms.ModelForm):
         if phone:
             self.fields['sale_price'].initial = phone.price
         
-        # Filtrar teléfonos para parte de pago (solo disponibles y usados)
-        self.fields['trade_in_phone'].queryset = Phone.objects.filter(
-            status='available',
-            condition__in=['used', 'trade_in']
-        )
-        
         # Personalizar labels
         self.fields['customer'].label = 'Cliente'
         self.fields['sale_price'].label = 'Precio de venta'
         self.fields['payment_method'].label = 'Forma de pago'
         self.fields['is_picked_up'].label = 'Retirado'
         self.fields['has_trade_in'].label = 'Tiene parte de pago'
-        self.fields['trade_in_phone'].label = 'Celular en parte de pago'
         self.fields['trade_in_value'].label = 'Valor parte de pago'
         self.fields['notes'].label = 'Notas'
 
@@ -253,21 +254,56 @@ class SalePaymentDetailForm(forms.Form):
 
 
 class SaleCardDetailForm(forms.Form):
+    CUOTAS_CHOICES = [
+        ('1', '1 cuota (sin interés)'),
+        ('3', '3 cuotas (15% interés)'),
+        ('6', '6 cuotas (22% interés)'),
+    ]
+    
     tarjeta = forms.CharField(
         max_length=50,
         required=False,
         label='Tarjeta utilizada',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Visa, Mastercard'})
     )
-    monto_pesos = forms.DecimalField(
+    monto_base = forms.DecimalField(
         max_digits=12,
         decimal_places=2,
         required=False,
-        label='Monto total en pesos',
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100000'})
+        label='Precio en USD',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100', 'readonly': True})
     )
-    cuotas = forms.IntegerField(
+    cuotas = forms.ChoiceField(
+        choices=CUOTAS_CHOICES,
         required=False,
         label='Cantidad de cuotas',
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 3'})
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    monto_total = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        label='Total en pesos (USD × cotización + interés)',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 115000.00', 'readonly': True})
+    )
+    valor_cuota = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        label='Valor de cada cuota',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 38333.33', 'readonly': True})
+    )
+    cotizacion_dolar = forms.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        required=False,
+        label='Cotización del dólar',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1050'})
+    )
+    monto_usd = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        label='Precio base en USD (sin interés)',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100.00', 'readonly': True})
     )

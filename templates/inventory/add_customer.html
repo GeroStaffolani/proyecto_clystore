@@ -71,9 +71,29 @@
     </div>
 </div>
 
+{% if next_url %}
+<input type="hidden" id="next_url" value="{{ next_url }}">
+{% endif %}
+
 <script>
-    // Si se abre en ventana nueva, cerrar al guardar
-    if (window.opener) {
+    const nextUrlInput = document.getElementById('next_url');
+    
+    if (nextUrlInput && window.opener) {
+        // Si hay next_url y estamos en la página de detalle del cliente (después de guardar)
+        const pathParts = window.location.pathname.split('/');
+        const isDetailPage = pathParts.includes('customers') && pathParts[pathParts.length - 1] === '';
+        
+        if (isDetailPage) {
+            const customerId = pathParts[pathParts.length - 2];
+            const nextUrl = nextUrlInput.value;
+            const separator = nextUrl.includes('?') ? '&' : '?';
+            
+            // Redirigir la ventana padre con el customer_id
+            window.opener.location.href = nextUrl + separator + 'customer_id=' + customerId;
+            window.close();
+        }
+    } else if (window.opener) {
+        // Si no hay 'next', comportamiento anterior (recargar ventana padre)
         document.querySelector('form').addEventListener('submit', function() {
             setTimeout(function() {
                 if (window.opener) {

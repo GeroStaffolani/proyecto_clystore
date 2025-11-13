@@ -87,7 +87,7 @@
                                 <div>
                                     <strong>{{ phone.model }}</strong><br>
                                     <small class="text-muted">IMEI: {{ phone.imei }}</small><br>
-                                    <small class="text-muted">Por: {{ phone.added_by.get_full_name|default:phone.added_by.username }}</small>
+                                    <small class="text-muted">Por: {% if phone.added_by %}{{ phone.added_by.get_full_name|default:phone.added_by.username }}{% else %}N/A{% endif %}</small>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge bg-{{ phone.status|yesno:'success,warning,danger' }} status-badge">
@@ -121,7 +121,7 @@
                                 <div>
                                     <strong>{{ sale.customer.name }}</strong><br>
                                     <small class="text-muted">{{ sale.phone.model }}</small><br>
-                                    <small class="text-muted">Por: {{ sale.sold_by.get_full_name|default:sale.sold_by.username }}</small>
+                                    <small class="text-muted">Por: {% if sale.sold_by %}{{ sale.sold_by.get_full_name|default:sale.sold_by.username }}{% else %}N/A{% endif %}</small>
                                 </div>
                                 <div class="text-end">
                                     <strong>${{ sale.sale_price }}</strong><br>

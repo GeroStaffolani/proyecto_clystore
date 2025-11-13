@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponseForbidden
 from django.db.models import Q, Count, Sum, Avg
 from django.utils import timezone
+from django.urls import reverse
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
 import json
@@ -124,7 +125,9 @@ def inventory_used_list(request):
     Lista de celulares USADOS en inventario
     """
     form = PhoneSearchForm(request.GET)
-    phones = Phone.objects.select_related('model__brand', 'added_by').filter(condition='used').exclude(status='sold').order_by('-created_at')
+    phones = Phone.objects.select_related('model__brand', 'added_by').filter(
+        condition='used'
+    ).exclude(status='sold').order_by('-created_at')
     # Aplicar filtros de búsqueda (excepto condición, ya filtrado)
     if form.is_valid():
         search = form.cleaned_data.get('search')
@@ -193,6 +196,11 @@ def add_phone(request):
     """
     Agregar nuevo celular al inventario
     """
+    # Obtener parámetros del GET
+    customer_id = request.GET.get('customer_id', None)
+    model_id = request.GET.get('model_id', None)
+    is_trade_in = request.GET.get('is_trade_in', 'false') == 'true'
+    
     if request.method == 'POST':
         form = PhoneForm(request.POST)
         if form.is_valid():
@@ -202,7 +210,24 @@ def add_phone(request):
             messages.success(request, f'Celular {phone.model} agregado exitosamente.')
             return redirect('phone_detail', phone_id=phone.id)
     else:
-        form = PhoneForm()
+        # Preparar valores iniciales
+        initial = {}
+        
+        # Si viene de una parte de pago, precargar datos
+        if is_trade_in:
+            initial['condition'] = 'used'
+            initial['acquisition_type'] = 'parte_pago'
+            
+            if customer_id:
+                initial['acquired_from'] = customer_id
+            
+            if model_id:
+                initial['model'] = model_id
+        elif customer_id:
+            # Si solo viene customer_id (de crear cliente)
+            initial['acquired_from'] = customer_id
+        
+        form = PhoneForm(initial=initial)
     
     return render(request, 'inventory/add_phone.html', {'form': form})
 
@@ -313,15 +338,51 @@ def add_sale(request, phone_id):
     if not phone.can_be_sold():
         messages.error(request, 'Este celular no está disponible para venta.')
         return redirect('phone_detail', phone_id=phone.id)
-    from .forms import SalePaymentDetailForm
+    from .forms import SalePaymentDetailForm, SaleCardDetailForm
     payment_detail_form = None
+    card_form = None
+    
+    # Obtener el customer_id si viene del parámetro GET (cuando regresa de crear cliente)
+    customer_id = request.GET.get('customer_id', None)
+    
     if request.method == 'POST':
         form = SaleForm(request.POST, phone=phone)
         payment_detail_form = SalePaymentDetailForm(request.POST)
+        card_form = SaleCardDetailForm(request.POST)
         if form.is_valid() and payment_detail_form.is_valid():
             sale = form.save(commit=False)
             sale.phone = phone
             sale.sold_by = request.user
+
+            # Procesar parte de pago (trade-in)
+            if sale.has_trade_in:
+                trade_in_model = form.cleaned_data.get('trade_in_model')
+                trade_in_value = form.cleaned_data.get('trade_in_value')
+                if trade_in_model and trade_in_value:
+                    trade_in_info = f"\nParte de pago:\n"
+                    trade_in_info += f"- Modelo: {trade_in_model.brand} {trade_in_model.name}\n"
+                    trade_in_info += f"- Valor: ${trade_in_value:.2f}"
+                    sale.notes = (sale.notes or '') + trade_in_info
+
+            # Procesar detalles de pago con tarjeta si el método es tarjeta
+            if sale.payment_method == 'card' and card_form.is_valid():
+                tarjeta = card_form.cleaned_data.get('tarjeta', '')
+                cuotas = card_form.cleaned_data.get('cuotas', '1')
+                monto_base = card_form.cleaned_data.get('monto_base', 0)
+                monto_total = card_form.cleaned_data.get('monto_total', 0)
+                cotizacion = card_form.cleaned_data.get('cotizacion_dolar', 0)
+                monto_usd = card_form.cleaned_data.get('monto_usd', 0)
+                
+                # Construir nota con información de tarjeta
+                card_info = f"\nPago con Tarjeta:\n"
+                card_info += f"- Tarjeta: {tarjeta}\n"
+                card_info += f"- Cuotas: {cuotas}\n"
+                card_info += f"- Monto base: ${monto_base:.2f}\n"
+                card_info += f"- Monto total con interés: ${monto_total:.2f}\n"
+                card_info += f"- Cotización USD: ${cotizacion:.2f}\n"
+                card_info += f"- Total estimado USD: ${monto_usd:.2f}"
+                
+                sale.notes = (sale.notes or '') + card_info
 
             # NUEVO: procesar JSON de pagos mixtos si existe
             raw_json = request.POST.get('payment_breakdown_json', '').strip()
@@ -418,11 +479,29 @@ def add_sale(request, phone_id):
                 for e in errors:
                     messages.warning(request, e)
             messages.success(request, f'Venta registrada exitosamente.')
+            
+            # Si tiene parte de pago, redirigir a agregar celular usado con datos del cliente
+            if sale.has_trade_in:
+                trade_in_model = form.cleaned_data.get('trade_in_model')
+                if trade_in_model:
+                    # Redirigir al formulario de agregar celular usado con parámetros
+                    return redirect(f"{reverse('add_phone')}?customer_id={sale.customer.id}&model_id={trade_in_model.id}&is_trade_in=true")
+            
             return redirect('sale_detail', sale_id=sale.id)
     else:
-        form = SaleForm(phone=phone)
+        # Si viene customer_id del GET, preseleccionarlo en el formulario
+        if customer_id:
+            form = SaleForm(phone=phone, initial={'customer': customer_id})
+        else:
+            form = SaleForm(phone=phone)
         payment_detail_form = SalePaymentDetailForm()
-    return render(request, 'inventory/add_sale.html', {'form': form, 'phone': phone, 'payment_detail_form': payment_detail_form})
+        card_form = SaleCardDetailForm(initial={'monto_base': phone.price, 'cuotas': '1'})
+    return render(request, 'inventory/add_sale.html', {
+        'form': form, 
+        'phone': phone, 
+        'payment_detail_form': payment_detail_form,
+        'card_form': card_form
+    })
 
 
 @login_required
@@ -503,16 +582,30 @@ def add_customer(request):
     """
     Agregar nuevo cliente
     """
+    # Obtener la URL de retorno del parámetro 'next'
+    next_url = request.GET.get('next', None)
+    
     if request.method == 'POST':
         form = CustomerForm(request.POST)
         if form.is_valid():
             customer = form.save()
             messages.success(request, f'Cliente {customer.name} agregado exitosamente.')
+            
+            # Si hay una URL de retorno, redirigir allí con el ID del cliente
+            if next_url:
+                # Agregar el ID del cliente como parámetro para que se seleccione automáticamente
+                separator = '&' if '?' in next_url else '?'
+                return redirect(f'{next_url}{separator}customer_id={customer.id}')
+            
             return redirect('customer_detail', customer_id=customer.id)
     else:
         form = CustomerForm()
     
-    return render(request, 'inventory/add_customer.html', {'form': form})
+    context = {
+        'form': form,
+        'next_url': next_url
+    }
+    return render(request, 'inventory/add_customer.html', context)
 
 
 @login_required

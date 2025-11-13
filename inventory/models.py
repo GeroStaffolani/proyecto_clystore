@@ -161,7 +161,6 @@ class Phone(models.Model):
         ('new', 'Nuevo'),
         ('used', 'Usado'),
         ('refurbished', 'Reacondicionado'),
-        ('trade_in', 'Parte de pago'),
     ]
     
     # Validador para IMEI (15 dígitos)
